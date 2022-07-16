@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct LocalizeableData {
+public struct LocalizeableData {
     public let path: String
     public let filename: String
     public let filetype: Filetype

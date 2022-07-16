@@ -4,56 +4,47 @@ import Funswift
 public struct LocoAnalyzer {
 
     let pattern = #"("[^\"]+")\s+=\s+\"[^\"]+\""#
-    let sourcePattern = #"NSLocalizedString\((\".*?\")"#
+    let sourcePattern = #"(Text\(|NSLocalizedString\(|String\(localized:\s?)(\".*?\")"#
     public init() {}
 }
 
-let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/seco-tools-ios"
+let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/coeli-ios"
 
 extension LocoAnalyzer {
 
     public func sourceFiles(
         from startPath: String,
         filter: PathFilter = .custom(["Build"])
-    ) -> IO<Void> {
-        IO {
-                let result = zip(
-                    localizedFiles(from:startPath, filter: filter),
-                    IO.pure(testPath)
-                        .flatMap(
-                            supportedFiletypes([.swift], filter: filter)
-                            >=> buildSourcePaths
-                            >=> flattenSourceData
-                    )
-                ).unsafeRun()
+    ) -> IO<([(LocalizationError, [String])], [LocalizeableData])> {
+        zip(
+            IO.pure(testPath)
+                .flatMap(
+                    supportedFiletypes(.localizeable, filter: filter)
+                    >=> buildLocalizeablePaths
+                    >=> buildLocalizationGroups
+                    >=> checkLocalizationGroups
+            ),
+            IO.pure(testPath)
+                .flatMap(
+                    supportedFiletypes([.swift], filter: filter)
+                    >=> buildSourcePaths
+                    >=> flattenSourceData
+            )
+        )
 
-            let allLocalized = Set(result.0.flatMap { $1 })
-            let notUsedTranslations = allLocalized.filter { result.1.contains($0) == false }
-            let untranslated = result.1.filter { allLocalized.contains($0) == false }
-            print("(Might be) missing translations \(untranslated)")
-            print("Not used: \(notUsedTranslations) \n")
+//            let allLocalized = Set(result.0.flatMap { $1 })
+//            let notUsedTranslations = allLocalized.filter { result.1.contains($0) == false }
+//            let untranslated = result.1.filter { allLocalized.contains($0) == false }
+//            print("(Might be) missing translations \(untranslated)")
+//            print("Not used: \(notUsedTranslations) \n")
 //            result.0.compactMap { error, _ in
 //                error.errors
 //            }.filter { $0 != .none }
-//            
+//
 //            result.0.forEach { error, _ in
 //                error.errors.filter { $0 != .none })
 //            }
 //            print("Duplicates \(result.0.filter {)")
-        }
-    }
-
-    private func localizedFiles(
-        from startPath: String,
-        filter: PathFilter = .custom(["Build"])
-    ) -> IO<[(LocalizationError, [String])]> {
-        IO.pure(testPath)
-            .flatMap(
-                supportedFiletypes(.localizeable, filter: filter)
-                >=> buildLocalizeablePaths
-                >=> buildLocalizationGroups
-                >=> checkLocalizationGroups
-            )
     }
 
     private func checkLocalizationGroups(_ groups: [LocalizationGroup]) -> IO<[(LocalizationError, [String])]> {
@@ -78,10 +69,8 @@ extension LocoAnalyzer {
         IO { paths.map(createFileInfo >=> gatherSourceData >>> LocoAnalyzer.run) }
     }
 
-    private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[String]> {
-        IO {
-            files.flatMap { $0.data }
-        }
+    private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
+        IO { files.compactMap { $0 }.filter { $0.data.isEmpty == false } }
     }
 
     private func buildLocalizationGroups(_ files: [LocalizeableData]) -> IO<[LocalizationGroup]> {
@@ -127,7 +116,7 @@ extension LocoAnalyzer {
                 var entries: [String] = []
                 regex.enumerateMatches(in: data, range: range) { (match, _, _) in
 
-                    guard let match = match, let range = Range(match.range(at: 1), in: data)
+                    guard let match = match, let range = Range(match.range(at: 2), in: data)
                     else { return }
 
                     entries.append(String(data[range]))
