@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Funswift",
+        "repositoryURL": "https://github.com/konrad1977/funswift",
+        "state": {
+          "branch": "main",
+          "revision": "1d43d8575528287e92ef52925b91a7751f4492e6",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
