@@ -1,28 +1,31 @@
 import Foundation
 import Funswift
 
+extension RangeExpression where Bound == String.Index  {
+    func nsRange<S: StringProtocol>(in string: S) -> NSRange { .init(self, in: string) }
+}
+
 public struct LocoAnalyzer {
 
     let pattern = #"("[^\"]+")\s+=\s+\"[^\"]+\""#
-    let sourcePattern = #"(Text\(|NSLocalizedString\(|String\(localized:\s?)(\".*?\")"#
+    let sourcePattern = #"(Text\(|NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
     public init() {}
 }
 
-let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/coeli-ios"
+let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/seco-tools-ios"
 
 extension LocoAnalyzer {
 
     public func sourceFiles(
         from startPath: String,
         filter: PathFilter = .custom(["Build"])
-    ) -> IO<([(LocalizationError, [String])], [LocalizeableData])> {
+    ) -> IO<([LocalizationGroup], [LocalizeableData])> {
         zip(
             IO.pure(testPath)
                 .flatMap(
                     supportedFiletypes(.localizeable, filter: filter)
                     >=> buildLocalizeablePaths
                     >=> buildLocalizationGroups
-                    >=> checkLocalizationGroups
             ),
             IO.pure(testPath)
                 .flatMap(
@@ -31,42 +34,28 @@ extension LocoAnalyzer {
                     >=> flattenSourceData
             )
         )
-
-//            let allLocalized = Set(result.0.flatMap { $1 })
-//            let notUsedTranslations = allLocalized.filter { result.1.contains($0) == false }
-//            let untranslated = result.1.filter { allLocalized.contains($0) == false }
-//            print("(Might be) missing translations \(untranslated)")
-//            print("Not used: \(notUsedTranslations) \n")
-//            result.0.compactMap { error, _ in
-//                error.errors
-//            }.filter { $0 != .none }
-//
-//            result.0.forEach { error, _ in
-//                error.errors.filter { $0 != .none })
-//            }
-//            print("Duplicates \(result.0.filter {)")
     }
 
-    private func checkLocalizationGroups(_ groups: [LocalizationGroup]) -> IO<[(LocalizationError, [String])]> {
-        IO { groups.compactMap(checkLocalizationGroup >>> LocoAnalyzer.run) }
-    }
+//    private func checkLocalizationGroups(_ groups: [LocalizationGroup]) -> IO<[(LocalizationError, [String])]> {
+//        IO { groups.compactMap(checkLocalizationGroup >>> LocoAnalyzer.run) }
+//    }
 
-    private func checkLocalizationGroup(_ group: LocalizationGroup) -> IO<(LocalizationError, [String])> {
-        IO {
-            let groupErrors = group
-                .files
-                .map(checkForDuplicates >>> LocoAnalyzer.run)
-                .filter { $0 != .none }
-            return (LocalizationError(errors: groupErrors), group.files.flatMap { $0.data })
-        }
-    }
+//    private func checkLocalizationGroup(_ group: LocalizationGroup) -> IO<(LocalizationError, [String])> {
+//        IO {
+//            let groupErrors = group
+//                .files
+//                .map(checkForDuplicates >>> LocoAnalyzer.run)
+//                .filter { $0 != .none }
+//            return (LocalizationError(errors: groupErrors), group.files.flatMap { $0.data })
+//        }
+//    }
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherLocalizeableData >>> LocoAnalyzer.run) }
+        IO { paths.map(createFileInfo >=> gatherRegexData(pattern, groupIndex: 1) >>> LocoAnalyzer.run) }
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherSourceData >>> LocoAnalyzer.run) }
+        IO { paths.map(createFileInfo >=> gatherRegexData(sourcePattern, groupIndex: 2) >>> LocoAnalyzer.run) }
     }
 
     private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
@@ -94,59 +83,46 @@ extension LocoAnalyzer {
         }
     }
 
-    private func checkForDuplicates(_ file: LocalizeableData) -> IO<LocalizationErrorType> {
-        IO {
-            let filtered = Dictionary(grouping: file.data, by: { $0 })
-                .filter { $1.count > 1 }
-            if filtered.isEmpty == false {
-                return .duplicate(key: filtered.keys.first ?? "", file: file.path)
-            }
-            return .none
-        }
-    }
+//    private func checkForDuplicates(_ file: LocalizeableData) -> IO<LocalizationErrorType> {
+//        IO {
+//            let filtered = Dictionary(grouping: file.data, by: { $0 })
+//                .filter { $1.count > 1 }
+//            if filtered.isEmpty == false {
+//                return .duplicate(key: filtered.keys.first ?? "", file: file.path)
+//            }
+//            return .none
+//        }
+//    }
 
-    private func gatherSourceData(_ sourcefile: Sourcefile) -> IO<LocalizeableData> {
-        IO {
-            do {
-                let data = String(sourcefile.data)
-                let range = NSRange(data.startIndex..<data.endIndex,
-                                      in: data)
+    private func gatherRegexData(_ pattern: String, groupIndex: Int) -> (Sourcefile) -> IO<LocalizeableData> {
+        return { sourcefile in
+            IO {
+                do {
+                    let data = String(sourcefile.data)
+                    let range = NSRange(data.startIndex..<data.endIndex,
+                                          in: data)
 
-                let regex = try NSRegularExpression(pattern: sourcePattern, options: [])
-                var entries: [String] = []
-                regex.enumerateMatches(in: data, range: range) { (match, _, _) in
+                    let regex = try NSRegularExpression(pattern: pattern, options: [])
+                    var entries: [LocalizeEntry] = []
+                    regex.enumerateMatches(in: data, range: range) { (match, _, _) in
 
-                    guard let match = match, let range = Range(match.range(at: 2), in: data)
-                    else { return }
+                        guard let match = match, let range = Range(match.range(at: groupIndex), in: data)
+                        else { return }
+                        let subStrmatch = String(data[range])
 
-                    entries.append(String(data[range]))
+                        do {
+                            let regex = try NSRegularExpression(pattern: "\n", options: [])
+                            let subRange = range.nsRange(in: subStrmatch)
+                            let lineNumber = regex.numberOfMatches(in: data, range: NSMakeRange(0, subRange.location)) + 1
+                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: lineNumber))
+                        } catch {
+                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: 0))
+                        }
+                    }
+                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
+                } catch {
+                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
                 }
-                return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
-            } catch {
-                return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
-            }
-        }
-    }
-
-    private func gatherLocalizeableData(_ sourcefile: Sourcefile) -> IO<LocalizeableData> {
-        IO {
-            do {
-                let data = String(sourcefile.data)
-                let range = NSRange(data.startIndex..<data.endIndex,
-                                      in: data)
-
-                let regex = try NSRegularExpression(pattern: pattern, options: [])
-                var entries: [String] = []
-                regex.enumerateMatches(in: data, range: range) { (match, _, _) in
-
-                    guard let match = match, let range = Range(match.range(at: 1), in: data)
-                    else { return }
-
-                    entries.append(String(data[range]))
-                }
-                return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
-            } catch {
-                return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
             }
         }
     }

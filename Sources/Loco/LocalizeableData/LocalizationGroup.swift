@@ -7,6 +7,6 @@
 
 import Foundation
 
-struct LocalizationGroup {
-    let files: [LocalizeableData]
+public struct LocalizationGroup {
+    public let files: [LocalizeableData]
 }
