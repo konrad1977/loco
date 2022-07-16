@@ -10,8 +10,6 @@ let result = LocoAnalyzer()
 
 handleLocalizations(result.0, result.1)
 
-//printLocaleData(result.1)
-
 func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableData]) {
 
     let allLocalizations = groups.flatMap { $0.files }.flatMap { $0.data }
@@ -24,13 +22,13 @@ func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableD
     }
 
     if untranslated.isEmpty == false {
-        print("Warning found \(untranslated.count) untranslated files")
+        print("Warning found \(untranslated.count) untranslated file(s)")
         printLocaleData(untranslated)
         print("-----")
     }
 
     if unusedTranslationKeys.isEmpty == false {
-        print("Found \(unusedTranslationKeys.count) translation keys that can be removed from project.")
+        print("Found \(unusedTranslationKeys.count) translation key(s) that can be removed from project.")
         unusedTranslationKeys.forEach {
             print($0)
         }

@@ -10,14 +10,14 @@ let package = Package(
 		.macOS(.v10_11)
 	],
     products: [
-        .executable(name: "Loco", targets: ["Loco"])
+        .executable(name: "loco", targets: ["loco"])
     ],
     dependencies: [
 		.package(name: "Funswift", url: "https://github.com/konrad1977/funswift", .branch("main"))
     ],
     targets: [
         .target(
-            name: "Loco",
+            name: "loco",
             dependencies: ["Funswift"]),
         .testTarget(
             name: "LocoTests",

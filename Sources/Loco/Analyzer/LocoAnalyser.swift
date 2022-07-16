@@ -12,7 +12,7 @@ public struct LocoAnalyzer {
     public init() {}
 }
 
-let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/seco-tools-ios"
+//let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/seco-tools-ios"
 
 extension LocoAnalyzer {
 
@@ -21,13 +21,13 @@ extension LocoAnalyzer {
         filter: PathFilter = .custom(["Build"])
     ) -> IO<([LocalizationGroup], [LocalizeableData])> {
         zip(
-            IO.pure(testPath)
+            IO.pure(startPath)
                 .flatMap(
                     supportedFiletypes(.localizeable, filter: filter)
                     >=> buildLocalizeablePaths
                     >=> buildLocalizationGroups
             ),
-            IO.pure(testPath)
+            IO.pure(startPath)
                 .flatMap(
                     supportedFiletypes([.swift], filter: filter)
                     >=> buildSourcePaths
@@ -154,7 +154,7 @@ extension LocoAnalyzer {
     }
 
     private func fileData(from path: String) -> IO<String.SubSequence> {
-        guard let file = try? String(contentsOfFile: testPath + "/" + path, encoding: .ascii)[...]
+        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...]
         else { return IO { "" } }
         return IO { file }
     }
