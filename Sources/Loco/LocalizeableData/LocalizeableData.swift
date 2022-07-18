@@ -27,7 +27,7 @@ extension LocalizeEntry: Equatable {
 
 extension LocalizeEntry: CustomStringConvertible {
     public var description: String {
-        "\(path):\(lineNumber) \(data)"
+        "./\(path):\(lineNumber) \(data)"
     }
 }
 

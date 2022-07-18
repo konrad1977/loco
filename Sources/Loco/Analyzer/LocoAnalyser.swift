@@ -29,23 +29,16 @@ extension LocoAnalyzer {
             }
 
             if unusedTranslationKeys.isEmpty == false {
-                unusedTranslationKeys.forEach {
-                    print($0)
-                }
+                printUnusedTranslations(unusedTranslationKeys)
             }
 
-            print("Found \(unusedTranslationKeys.count) translation key(s) that can be removed from project.")
-            print("-------------------MISSING TRANSLATIONS------------------------")
-
-            if untranslated.isEmpty == false {
-                print("Warning found \(untranslated.count) untranslated file(s)")
-                printLocaleData(untranslated)
-            }
-
-            print("-------------------DUPLICATE TRANSLATIONS------------------------")
             let files = groups.flatMap { $0.files }
             files.forEach { file in
                 checkForDuplicateKeys(file).unsafeRun()
+            }
+
+            if untranslated.isEmpty == false {
+                printMissingTranslations(untranslated)
             }
         }
     }
@@ -59,18 +52,23 @@ extension LocoAnalyzer {
             let duplicates = Dictionary(grouping: group.data, by: { $0 })
                 .filter { $1.count > 1 }
             duplicates.forEach { item in
-                print("Found duplicate key:")
                 item.value.forEach { item in
-                    print(item)
+                    print("\(item.path):\(item.lineNumber) Warning duplicate key found for: '\(item.data)'")
                 }
             }
         }
     }
 
-    private func printLocaleData(_ inCode: [LocalizeableData]) {
+    private func printUnusedTranslations(_ data: [LocalizeEntry]) {
+        data.forEach {
+            print("\($0.path):\($0.lineNumber) unused key '\($0.data)'")
+        }
+    }
+
+    private func printMissingTranslations(_ inCode: [LocalizeableData]) {
         inCode.forEach { locData in
             locData.data.forEach { locale in
-                print("\(locData.path):\(locale.lineNumber) \(locale.data)")
+                print("\(locData.path):\(locale.lineNumber) missing translation found for: '\(locale.data)'")
             }
         }
     }

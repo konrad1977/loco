@@ -34,20 +34,6 @@ extension LocoDataBuilder {
         )
     }
 
-//    private func checkLocalizationGroups(_ groups: [LocalizationGroup]) -> IO<[(LocalizationError, [String])]> {
-//        IO { groups.compactMap(checkLocalizationGroup >>> LocoAnalyzer.run) }
-//    }
-
-//    private func checkLocalizationGroup(_ group: LocalizationGroup) -> IO<(LocalizationError, [String])> {
-//        IO {
-//            let groupErrors = group
-//                .files
-//                .map(checkForDuplicates >>> LocoAnalyzer.run)
-//                .filter { $0 != .none }
-//            return (LocalizationError(errors: groupErrors), group.files.flatMap { $0.data })
-//        }
-//    }
-
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
         IO { paths.map(createFileInfo >=> gatherRegexData(pattern, groupIndex: 1) >>> LocoDataBuilder.run) }
     }
@@ -71,7 +57,7 @@ extension LocoDataBuilder {
                 } else {
                     return f1.filename < f2.filename
                 }
-            }
+            }.filter { $0.filename.contains("InfoPlist") == false }
 
             return Dictionary(grouping: sorted) { item in
                 "\(item.filename)" + (item.pathComponents.dropLast(2).last ?? "")
@@ -150,10 +136,10 @@ extension LocoDataBuilder {
 
     private func createFileInfo(_ path: String) -> IO<Sourcefile> {
         fileData(from: path).map { data in
-            let fileUrl = URL(fileURLWithPath: path)
+            var fileUrl = URL(fileURLWithPath: path)
             let filetype = Filetype(extension: fileUrl.pathExtension)
             let filename = fileUrl.lastPathComponent
-            return Sourcefile(path: fileUrl.relativePath, name: filename, data: data, filetype: filetype)
+            return Sourcefile(path: fileUrl.standardizedFileURL.path, name: filename, data: data, filetype: filetype)
         }
     }
 }
