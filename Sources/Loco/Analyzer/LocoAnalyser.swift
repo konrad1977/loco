@@ -1,170 +1,77 @@
+//
+//  File.swift
+//  
+//
+//  Created by Mikael Konradsson on 2022-07-18.
+//
+
 import Foundation
 import Funswift
 
-extension RangeExpression where Bound == String.Index  {
-    func nsRange<S: StringProtocol>(in string: S) -> NSRange { .init(self, in: string) }
+struct LocoAnalyzer {
+
+    func analyze(io: IO<([LocalizationGroup], [LocalizeableData])>) -> IO<Void> {
+        io.flatMap(handleLocalizations)
+    }
 }
-
-public struct LocoAnalyzer {
-
-    let pattern = #"("[^\"]+")\s+=\s+\"[^\"]+\""#
-    let sourcePattern = #"(Text\(|NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
-    public init() {}
-}
-
-//let testPath = "/Users/mikaelkonradsson/Documents/git/bontouch/seco-tools-ios"
 
 extension LocoAnalyzer {
 
-    public func sourceFiles(
-        from startPath: String,
-        filter: PathFilter = .custom(["Build"])
-    ) -> IO<([LocalizationGroup], [LocalizeableData])> {
-        zip(
-            IO.pure(startPath)
-                .flatMap(
-                    supportedFiletypes(.localizeable, filter: filter)
-                    >=> buildLocalizeablePaths
-                    >=> buildLocalizationGroups
-            ),
-            IO.pure(startPath)
-                .flatMap(
-                    supportedFiletypes([.swift], filter: filter)
-                    >=> buildSourcePaths
-                    >=> flattenSourceData
-            )
-        )
-    }
-
-//    private func checkLocalizationGroups(_ groups: [LocalizationGroup]) -> IO<[(LocalizationError, [String])]> {
-//        IO { groups.compactMap(checkLocalizationGroup >>> LocoAnalyzer.run) }
-//    }
-
-//    private func checkLocalizationGroup(_ group: LocalizationGroup) -> IO<(LocalizationError, [String])> {
-//        IO {
-//            let groupErrors = group
-//                .files
-//                .map(checkForDuplicates >>> LocoAnalyzer.run)
-//                .filter { $0 != .none }
-//            return (LocalizationError(errors: groupErrors), group.files.flatMap { $0.data })
-//        }
-//    }
-
-    private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherRegexData(pattern, groupIndex: 1) >>> LocoAnalyzer.run) }
-    }
-
-    private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherRegexData(sourcePattern, groupIndex: 2) >>> LocoAnalyzer.run) }
-    }
-
-    private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
-        IO { files.compactMap { $0 }.filter { $0.data.isEmpty == false } }
-    }
-
-    private func buildLocalizationGroups(_ files: [LocalizeableData]) -> IO<[LocalizationGroup]> {
+    private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableData]) -> IO<Void> {
         IO {
+            let allLocalizations = allLocalizations(from: groups).unsafeRun()
+            let unusedTranslationKeys = allLocalizations.filter {
+                loc in inCode.flatMap { $0.data }.contains(loc) == false
+            }
 
-            let sorted = files.sorted { f1, f2 in
-                if
-                    let firstLast = f1.pathComponents.last,
-                    let secondLast = f2.pathComponents.last {
-                    return firstLast < secondLast && f1.filename < f2.filename
-                } else {
-                    return f1.filename < f2.filename
+            let untranslated = inCode.filter {
+                $0.data.filter { allLocalizations.contains($0) }.isEmpty
+            }
+
+            if unusedTranslationKeys.isEmpty == false {
+                unusedTranslationKeys.forEach {
+                    print($0)
                 }
             }
 
-            return Dictionary(grouping: sorted) { item in
-                "\(item.filename)" + (item.pathComponents.dropLast(2).last ?? "")
-            }.map { (_, value: [LocalizeableData]) in
-                LocalizationGroup(files: value)
+            print("Found \(unusedTranslationKeys.count) translation key(s) that can be removed from project.")
+            print("-------------------MISSING TRANSLATIONS------------------------")
+
+            if untranslated.isEmpty == false {
+                print("Warning found \(untranslated.count) untranslated file(s)")
+                printLocaleData(untranslated)
+            }
+
+            print("-------------------DUPLICATE TRANSLATIONS------------------------")
+            let files = groups.flatMap { $0.files }
+            files.forEach { file in
+                checkForDuplicateKeys(file).unsafeRun()
             }
         }
     }
 
-//    private func checkForDuplicates(_ file: LocalizeableData) -> IO<LocalizationErrorType> {
-//        IO {
-//            let filtered = Dictionary(grouping: file.data, by: { $0 })
-//                .filter { $1.count > 1 }
-//            if filtered.isEmpty == false {
-//                return .duplicate(key: filtered.keys.first ?? "", file: file.path)
-//            }
-//            return .none
-//        }
-//    }
+    private func allLocalizations(from groups: [LocalizationGroup]) -> IO<[LocalizeEntry]> {
+        IO { groups.flatMap { $0.files }.flatMap { $0.data } }
+    }
 
-    private func gatherRegexData(_ pattern: String, groupIndex: Int) -> (Sourcefile) -> IO<LocalizeableData> {
-        return { sourcefile in
-            IO {
-                do {
-                    let data = String(sourcefile.data)
-                    let range = NSRange(data.startIndex..<data.endIndex,
-                                          in: data)
-
-                    let regex = try NSRegularExpression(pattern: pattern, options: [])
-                    var entries: [LocalizeEntry] = []
-                    regex.enumerateMatches(in: data, range: range) { (match, _, _) in
-
-                        guard let match = match, let range = Range(match.range(at: groupIndex), in: data)
-                        else { return }
-                        let subStrmatch = String(data[range])
-
-                        do {
-                            let regex = try NSRegularExpression(pattern: "\n", options: [])
-                            let subRange = range.nsRange(in: subStrmatch)
-                            let lineNumber = regex.numberOfMatches(in: data, range: NSMakeRange(0, subRange.location)) + 1
-                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: lineNumber))
-                        } catch {
-                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: 0))
-                        }
-                    }
-                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
-                } catch {
-                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
+    private func checkForDuplicateKeys(_ group: LocalizeableData) -> IO<Void> {
+        IO {
+            let duplicates = Dictionary(grouping: group.data, by: { $0 })
+                .filter { $1.count > 1 }
+            duplicates.forEach { item in
+                print("Found duplicate key:")
+                item.value.forEach { item in
+                    print(item)
                 }
             }
         }
     }
-}
 
-// MARK: - Privates
-extension LocoAnalyzer {
-    private static func run<T>(io: IO<T>) -> T {
-        io.unsafeRun()
-    }
-
-    private func supportedFiletypes(_ supportedFiletypes: Filetype, filter: PathFilter) -> (String) -> IO<[String]> {
-        return { path in
-            guard let paths = try? FileManager.default
-                .subpathsOfDirectory(atPath: path)
-                .filter(
-                  noneOf(filter.query)
-                    .intersect(
-                      other: anyOf(
-                        supportedFiletypes
-                          .elements()
-                          .map { $0.predicate }
-                      )
-                    ).contains
-                )
-            else { return IO { [] } }
-            return IO { paths }
-        }
-    }
-
-    private func fileData(from path: String) -> IO<String.SubSequence> {
-        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...]
-        else { return IO { "" } }
-        return IO { file }
-    }
-
-    private func createFileInfo(_ path: String) -> IO<Sourcefile> {
-        fileData(from: path).map { data in
-            let fileUrl = URL(fileURLWithPath: path)
-            let filetype = Filetype(extension: fileUrl.pathExtension)
-            let filename = fileUrl.lastPathComponent
-            return Sourcefile(path: fileUrl.relativePath, name: filename, data: data, filetype: filetype)
+    private func printLocaleData(_ inCode: [LocalizeableData]) {
+        inCode.forEach { locData in
+            locData.data.forEach { locale in
+                print("\(locData.path):\(locale.lineNumber) \(locale.data)")
+            }
         }
     }
 }
