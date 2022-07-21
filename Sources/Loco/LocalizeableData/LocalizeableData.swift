@@ -37,10 +37,16 @@ public struct LocalizeableData {
     public let filename: String
     public let filetype: Filetype
     public let data: [LocalizeEntry]
+    public var locale: String?
 }
 
 extension LocalizeableData {
     var pathComponents: [String] {
         return URL(fileURLWithPath: path).pathComponents
+    }
+
+    func replaceLanguage(with lang: String) -> String {
+        let cpy = pathComponents
+        return pathComponents.dropLast(2).joined(separator: "/") + "/" + lang + ".lproj/" + cpy.last!
     }
 }
