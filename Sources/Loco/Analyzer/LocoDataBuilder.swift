@@ -7,7 +7,7 @@ extension RangeExpression where Bound == String.Index  {
 
 public struct LocoDataBuilder {
     let pattern = #"("[^\"]+")\s+=\s+\"[^\"]+\""#
-    let sourcePattern = #"(Text\(|NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
+    let sourcePattern = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
     let localePathData = #"(\w{2}-\w{2})\.lproj"#
     public init() {}
 }

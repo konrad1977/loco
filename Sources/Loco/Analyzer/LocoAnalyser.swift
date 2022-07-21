@@ -84,7 +84,7 @@ extension LocoAnalyzer {
     private func printMissingTranslations(_ inCode: [LocalizeableData]) {
         inCode.forEach { locData in
             locData.data.forEach { locale in
-                print("\(locData.path):\(locale.lineNumber) Warning missing translation found for: '\(locale.data) \(locData.locale)'")
+                print("\(locData.path):\(locale.lineNumber) Warning missing translation found for: '\(locale.data)'")
             }
         }
     }
