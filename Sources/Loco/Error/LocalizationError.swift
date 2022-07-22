@@ -16,18 +16,23 @@ public enum LocalizationError: Equatable {
 }
 
 extension LocalizationError: CustomStringConvertible {
+
+    private func unquote(_ str: String) -> String {
+        str.replacingOccurrences(of: "\"", with: "")
+    }
+
     public var description: String {
         switch self {
         case let .duplicate(key, path, linenumber):
-            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " duplicate key found for: " + "'\(key)'".textColor(.keyColor)
+            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " duplicate key found for: ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
         case let .missingKey(name, path):
-            return "\(path) " + "warning:".textColor(.warningColor) + " is missing the key " + "'\(name)'".textColor(.keyColor)
+            return "\(path) " + "warning:".textColor(.warningColor) + " is missing the key ".fontStyle(.italic) + "'\(unquote(name))'".textColor(.keyColor)
         case let .unused(key, path, linenumber):
-            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " '\(key)'".textColor(.keyColor) + " is is unused"
+            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " '\(unquote(key))'".textColor(.keyColor) + " is is unused".fontStyle(.italic)
         case let .missingFile(name):
-            return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file"
+            return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file".fontStyle(.italic)
         case let .missingTranslation(key, path, linenumber):
-            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " missing translation found for " + "'\(key))'".textColor(.keyColor)
+            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " missing translation found for ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
         }
     }
 }
