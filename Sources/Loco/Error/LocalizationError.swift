@@ -21,7 +21,7 @@ extension LocalizationError: CustomStringConvertible {
         str.replacingOccurrences(of: "\"", with: "")
     }
 
-    public var description: String {
+    public var coloredDescription: String {
         switch self {
         case let .duplicate(key, path, linenumber):
             return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " duplicate key found for: ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
@@ -33,6 +33,21 @@ extension LocalizationError: CustomStringConvertible {
             return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file".fontStyle(.italic)
         case let .missingTranslation(key, path, linenumber):
             return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " missing translation found for ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case let .duplicate(key, path, linenumber):
+            return "\(path):\(linenumber): warning: duplicate key found for: '\(unquote(key))'"
+        case let .missingKey(name, path):
+            return "\(path) warning: is missing the key '\(unquote(name))'"
+        case let .unused(key, path, linenumber):
+            return "\(path):\(linenumber): warning: '\(unquote(key))' is is unused"
+        case let .missingFile(name):
+            return "\(name) warning: file is missing. You should create a file"
+        case let .missingTranslation(key, path, linenumber):
+            return "\(path):\(linenumber): warning: missing translation found for '\(unquote(key))'"
         }
     }
 }

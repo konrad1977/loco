@@ -115,7 +115,7 @@ extension LocoDataBuilder {
                 do {
                     let data = String(sourcefile.data)
                     let range = NSRange(data.startIndex..<data.endIndex,
-                                          in: data)
+                                                          in: data)
 
                     let regex = try NSRegularExpression(pattern: pattern, options: [])
                     var entries: [LocalizeEntry] = []

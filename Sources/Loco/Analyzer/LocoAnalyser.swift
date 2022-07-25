@@ -18,15 +18,10 @@ struct LocoAnalyzer {
 extension LocoAnalyzer {
 
     private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableData]) -> IO<Void> {
-        IO {
+        IO { 
             let allLocalizations = allLocalizations(from: groups).unsafeRun()
-            let unusedTranslationKeys = allLocalizations.filter {
-                loc in inCode.flatMap { $0.data }.contains(loc) == false
-            }
-
-            let untranslated = inCode.filter {
-                $0.data.filter { allLocalizations.contains($0) }.isEmpty
-            }
+            let unusedTranslationKeys = allLocalizations.filter { loc in inCode.flatMap { $0.data }.contains(loc) == false }
+            let untranslated = inCode.filter { $0.data.filter { allLocalizations.contains($0) }.isEmpty }
 
             var errors: [LocalizationError] = []
             let (unused, missing, missingFiles) = zip(
@@ -48,7 +43,7 @@ extension LocoAnalyzer {
                 errors.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
             }
 
-            errors.forEach { error in
+            errors.forEach { error in
                 print(error)
             }
             print("Found " + "\(errors.count)".textColor(.warningColor) + " issues.")
@@ -63,7 +58,7 @@ extension LocoAnalyzer {
         IO {
             Dictionary(grouping: group.data, by: { $0 })
                 .filter { $1.count > 1 }
-                .flatMap { $0.value }
+                .flatMap { $0.value }
                 .map { .duplicate(key: $0.data, path: $0.path, linenumber: $0.lineNumber) }
         }
     }
@@ -102,7 +97,7 @@ extension LocoAnalyzer {
         }
     }
 
-    private func printUnusedTranslations(_ data: [LocalizeEntry]) -> IO<[LocalizationError]>{
+    private func printUnusedTranslations(_ data: [LocalizeEntry]) -> IO<[LocalizationError]> {
         IO { data.map { .unused(key: $0.data, path: $0.path, linenumber: $0.lineNumber) } }
     }
 
