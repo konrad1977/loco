@@ -28,7 +28,7 @@ extension LocalizationError: CustomStringConvertible {
         case let .missingKey(name, path):
             return "\(path) " + "warning:".textColor(.warningColor) + " is missing the key ".fontStyle(.italic) + "'\(unquote(name))'".textColor(.keyColor)
         case let .unused(key, path, linenumber):
-            return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " '\(unquote(key))'".textColor(.keyColor) + " is is unused".fontStyle(.italic)
+            return "\(path):\(linenumber) " + "info:".textColor(.warningColor) + " '\(unquote(key))'".textColor(.keyColor) + " is is unused".fontStyle(.italic)
         case let .missingFile(name):
             return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file".fontStyle(.italic)
         case let .missingTranslation(key, path, linenumber):
@@ -43,7 +43,7 @@ extension LocalizationError: CustomStringConvertible {
         case let .missingKey(name, path):
             return "\(path) warning: is missing the key '\(unquote(name))'"
         case let .unused(key, path, linenumber):
-            return "\(path):\(linenumber): warning: '\(unquote(key))' is is unused"
+            return "\(path):\(linenumber): info: key '\(unquote(key))' is unused"
         case let .missingFile(name):
             return "\(name) warning: file is missing. You should create a file"
         case let .missingTranslation(key, path, linenumber):

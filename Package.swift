@@ -6,21 +6,21 @@ import PackageDescription
 let package = Package(
     name: "Loco",
 	platforms: [
-		.iOS(.v9),
-		.macOS(.v10_11)
+	  .iOS(.v9),
+	  .macOS(.v10_11)
 	],
     products: [
-        .executable(name: "loco", targets: ["loco"])
+      .executable(name: "loco", targets: ["loco"])
     ],
     dependencies: [
-		.package(name: "Funswift", url: "https://github.com/konrad1977/funswift", .branch("main"))
+	  .package(name: "Funswift", url: "https://github.com/konrad1977/funswift", .branch("main"))
     ],
     targets: [
-        .target(
-            name: "loco",
-            dependencies: ["Funswift"]),
-        .testTarget(
-            name: "LocoTests",
-            dependencies: ["FunNetworking"])
+      .target(
+        name: "loco",
+        dependencies: ["Funswift"]),
+      .testTarget(
+        name: "LocoTests",
+        dependencies: ["Funswift"])
     ]
 )
