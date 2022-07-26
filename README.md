@@ -1,4 +1,7 @@
 
+!["Logo"](https://github.com/konrad1977/loco/blob/main/images/logo.png)
+
+![](https://img.shields.io/github/languages/top/konrad1977/loco) ![](https://img.shields.io/github/license/konrad1977/loco)
 
 # Loco
 Loco is a CLI linter for Localization.strings and swift files.
