@@ -28,7 +28,7 @@ extension LocalizationError: CustomStringConvertible {
         case let .missingKey(name, path):
             return "\(path) " + "warning:".textColor(.warningColor) + " is missing the key ".fontStyle(.italic) + "'\(unquote(name))'".textColor(.keyColor)
         case let .unused(key, path, linenumber):
-            return "\(path):\(linenumber) " + "info:".textColor(.warningColor) + " '\(unquote(key))'".textColor(.keyColor) + " is is unused".fontStyle(.italic)
+            return "\(path):\(linenumber) " + "info:".textColor(.infoColor) + " '\(unquote(key))'".textColor(.keyColor) + " is unused".fontStyle(.italic)
         case let .missingFile(name):
             return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file".fontStyle(.italic)
         case let .missingTranslation(key, path, linenumber):

@@ -9,9 +9,13 @@ import Foundation
 import Funswift
 
 struct LocoAnalyzer {
-
+    let args: [String]
     func analyze(io: IO<([LocalizationGroup], [LocalizeableData])>) -> IO<Void> {
         io.flatMap(handleLocalizations)
+    }
+
+    init(args: [String]) {
+        self.args = args   
     }
 }
 
@@ -43,8 +47,9 @@ extension LocoAnalyzer {
                 errors.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
             }
 
+            let disableColoredOutput = Parser(keyword: "--no-color", args: args).hasArgument()
             errors.forEach { error in
-                print(error)
+                print(disableColoredOutput ? error : error.coloredDescription)
             }
             print("Found " + "\(errors.count)".textColor(.warningColor) + " issues.")
         }
@@ -111,5 +116,11 @@ extension LocoAnalyzer {
             }
             return errors
         }
+    }
+}
+
+extension LocoAnalyzer {
+    private func showOutputWithColors(args: [String]) -> Bool {
+        Parser(keyword: "--color", args: args).hasArgument()
     }
 }

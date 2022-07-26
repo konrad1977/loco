@@ -19,13 +19,8 @@ enum TerminalFontStyle: String {
 
 enum TerminalColor: Int {
     case warningColor = 203
-    case keyColor = 37
-    case structColor = 38
-    case enumColor = 204
-    case interfaceColor = 214
-    case functionColor = 248
-    case fileColor = 231
-    case white = 15
+    case keyColor = 36
+    case infoColor = 3
     case accentColor = 35
     case barColor = 39
 }
