@@ -1,7 +1,6 @@
 
 !["Logo"](https://github.com/konrad1977/loco/blob/main/images/logo.png)
-
-![](https://img.shields.io/github/languages/top/konrad1977/loco) ![](https://img.shields.io/github/license/konrad1977/loco)
+![](https://img.shields.io/github/languages/top/konrad1977/loco)
 
 # Loco
 Loco is a CLI linter for Localization.strings and swift files.
@@ -21,3 +20,10 @@ Loco is a CLI linter for Localization.strings and swift files.
 - Does not lint Localization.dict
 - Does not lint Storyboards
 - Will have false positive and its untested
+
+#### Installation
+Compile the project using terminal (or Xcode)
+```shell
+swift build
+```
+Copy the loco binary from *.build/debug* to */usr/local/bin/*
