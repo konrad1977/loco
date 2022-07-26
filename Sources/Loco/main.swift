@@ -18,7 +18,3 @@ TimeCalculator.run {
 .flatMap(Rounding.decimals(2) >=> printTime)
 .unsafeRun()
 
-
-
-
-

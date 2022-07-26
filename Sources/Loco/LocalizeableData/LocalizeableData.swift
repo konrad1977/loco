@@ -31,7 +31,6 @@ extension LocalizeEntry: CustomStringConvertible {
     }
 }
 
-
 public struct LocalizeableData {
     public let path: String
     public let filename: String

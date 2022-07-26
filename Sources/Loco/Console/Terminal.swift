@@ -105,7 +105,7 @@ enum Console {
 
         guard title.count > 0
         else { return }
-        print(title +  text.textColor(color))
+        print(title + text.textColor(color))
     }
 
     static func output(text: String, color: TerminalColor) {
