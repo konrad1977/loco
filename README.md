@@ -3,7 +3,7 @@
 ![](https://img.shields.io/github/languages/top/konrad1977/loco)
 
 # Loco
-Loco is a CLI linter for Localization.strings and swift files.
+Loco is a extremly fast CLI linter for Localization.strings and swift files.
 
 ### What does it check?
 - Untranslated strings in your swift files
@@ -27,3 +27,11 @@ Compile the project using terminal (or Xcode)
 swift build
 ```
 Copy the loco binary from *.build/debug* to */usr/local/bin/*
+
+## How to use
+Just run loco from your project root.
+```shell
+$ loco
+```
+
+!["Example"](https://github.com/konrad1977/loco/blob/main/images/example.png)
