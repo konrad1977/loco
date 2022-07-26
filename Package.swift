@@ -1,10 +1,10 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.4
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
-    name: "Loco",
+    name: "loco",
 	platforms: [
 	  .iOS(.v9),
 	  .macOS(.v10_11)
@@ -19,8 +19,5 @@ let package = Package(
       .target(
         name: "loco",
         dependencies: ["Funswift"]),
-      .testTarget(
-        name: "LocoTests",
-        dependencies: ["Funswift"])
     ]
 )
