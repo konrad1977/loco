@@ -41,11 +41,11 @@ extension LocalizationError: CustomStringConvertible {
         case let .duplicate(key, path, linenumber):
             return "\(path):\(linenumber): warning: duplicate key found for: '\(unquote(key))'"
         case let .missingKey(name, path):
-            return "\(path) warning: is missing the key '\(unquote(name))'"
+            return "\(path):0: warning: is missing the key '\(unquote(name))'"
         case let .unused(key, path, linenumber):
-            return "\(path):\(linenumber): info: key '\(unquote(key))' is unused"
+            return "\(path):\(linenumber): warning: key '\(unquote(key))' is unused"
         case let .missingFile(name):
-            return "\(name) warning: file is missing. You should create a file"
+            return "\(name) info: file is missing. You should create a file"
         case let .missingTranslation(key, path, linenumber):
             return "\(path):\(linenumber): warning: missing translation found for '\(unquote(key))'"
         }
