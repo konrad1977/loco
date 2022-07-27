@@ -35,7 +35,7 @@ $ loco
 ```
 
 ## Arguments
-Lint individual file (check for missing translations)
+Lint individual swift files (check for missing translations only)
 ```shell
 $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 ```
