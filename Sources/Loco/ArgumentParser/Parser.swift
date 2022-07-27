@@ -16,6 +16,15 @@ extension Parser {
         return first != nil
     }
 
+	func value() -> String? {
+		let (first, _) = findArgumentIndicies(for: keyword, in: args)
+
+		guard let first = first, first < args.count
+		else { return nil }
+
+		return args[first + 1]
+	}
+
     func parse() -> [String] {
         let (first, last) = findArgumentIndicies(for: keyword, in: args)
 
@@ -33,10 +42,9 @@ extension Parser {
 
     func parse<B>(default: B, _ f: @escaping ([String]) -> B) -> B {
         let result = parse()
-        
+
         guard result.isEmpty == false
         else { return `default` }
-
         return f(result)
     }
 }
@@ -46,7 +54,7 @@ extension Parser {
     private func findArgumentIndicies(for argv: String, in args: [String]) -> (first: Int?, last: Int?) {
         if let first = args.firstIndex(of: argv) {
             let copy = args.dropFirst(first)
-            if let next = copy.firstIndex(where: { $0 != argv && $0.hasPrefix("--")}) {
+			if let next = copy.firstIndex(where: { $0 != argv && ($0.hasPrefix("--") || $0.hasPrefix("-")) }) {
                 return (first, next)
             }
             return (first, nil)

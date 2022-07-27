@@ -34,4 +34,16 @@ Just run loco from your project root.
 $ loco
 ```
 
+## Arguments
+Lint individual file (check for missing translations)
+```shell
+$ loco -f "/myProject/Sources/Subfolder/somefile.swift"
+```
+
+Disable colored output
+```shell
+$ loco --no-color
+```
+
 !["Example"](https://github.com/konrad1977/loco/blob/main/images/example.png)
+!["Example2"](https://github.com/konrad1977/loco/blob/main/images/example2.png)

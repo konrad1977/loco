@@ -34,6 +34,22 @@ extension LocoDataBuilder {
             )
         )
     }
+
+	public func buildData(for file: String,
+						 filter: PathFilter = .custom(["Build"])
+	) -> IO<([LocalizationGroup], [LocalizeableData])> {
+		zip(
+			IO.pure(findProjectRoot(filePath: file).unsafeRun())
+				.flatMap(
+					supportedFiletypes(.localizeable, filter: filter)
+					>=> buildLocalizeablePaths
+					>=> fetchLocalizationLanguage
+					>=> buildLocalizationGroups
+				),
+			IO { [file] }
+				.flatMap(buildSourcePaths >=> flattenSourceData)
+		)
+	}
 }
 
 // MARK: - Privates
@@ -41,6 +57,30 @@ extension LocoDataBuilder {
     private static func run<T>(io: IO<T>) -> T {
         io.unsafeRun()
     }
+
+	public func findProjectRoot(filePath: String) -> IO<String> {
+		IO {
+			var path = filePath
+			repeat {
+				path = goUpADirectory(from: path).unsafeRun()
+			} while isRoot(path: path) == false
+			return path
+		}
+	}
+
+	private func isRoot(path: String) -> Bool {
+		do {
+			return try FileManager.default.contentsOfDirectory(atPath: path).contains(".git")
+		} catch {
+			return false
+		}
+	}
+
+	private func goUpADirectory(from path: String) -> IO<String> {
+		IO {
+			URL(fileURLWithPath: path).pathComponents.dropLast().joined(separator: "/")
+		}
+	}
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
         IO { paths.map(createFileInfo >=> gatherRegexData(pattern, groupIndex: 1) >>> LocoDataBuilder.run) }
