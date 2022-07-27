@@ -40,6 +40,13 @@ Lint individual swift files (check for missing translations only)
 $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 ```
 
+## Integrate with Xcode
+In build phases. Add run script (+)
+```shell
+loco --no-color
+```
+!["Xcode"](https://github.com/konrad1977/loco/blob/main/images/xcode.png)
+
 Disable colored output
 ```shell
 $ loco --no-color
