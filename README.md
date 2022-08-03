@@ -44,8 +44,13 @@ $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 ## Integrate with Xcode
 In build phases. Add run script (+)
 ```shell
-loco --no-color
+if which loco > /dev/null; then
+	loco --no-color
+else 
+	echo "warning: Loco is not installed. Compile from https://github.com/konrad1977/loco"
+fi
 ```
+!["XcodeSetup"](https://github.com/konrad1977/loco/blob/main/images/xcode-setup.png)
 !["Xcode"](https://github.com/konrad1977/loco/blob/main/images/xcode.png)
 
 Disable colored output
