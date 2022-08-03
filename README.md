@@ -42,6 +42,8 @@ $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 ```
 
 ## Integrate with Xcode
+!["Xcode"](https://github.com/konrad1977/loco/blob/main/images/xcode.png)
+
 In build phases. Add run script (+)
 ```shell
 if which loco > /dev/null; then
@@ -51,7 +53,6 @@ else
 fi
 ```
 !["XcodeSetup"](https://github.com/konrad1977/loco/blob/main/images/xcode-setup.png)
-!["Xcode"](https://github.com/konrad1977/loco/blob/main/images/xcode.png)
 
 Disable colored output
 ```shell
