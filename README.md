@@ -7,9 +7,10 @@ Loco is a extremly fast CLI linter for Localization.strings and swift files.
 
 ### What does it check?
 - Untranslated strings in your swift files
-- Missing keys in one or more languages
+- Empty values
 - Duplicate keys
 - Unused keys
+- Missing keys in one or more languages
 - Missing a translation file for a whole language
 
 #### Output format

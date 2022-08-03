@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  LocoAnalyzer.swift
 //  
 //
 //  Created by Mikael Konradsson on 2022-07-18.
@@ -15,7 +15,7 @@ struct LocoAnalyzer {
     }
 
     init(args: [String]) {
-        self.args = args   
+        self.args = args
     }
 }
 
@@ -28,12 +28,14 @@ extension LocoAnalyzer {
             let untranslated = inCode.filter { $0.data.filter { allLocalizations.contains($0) }.isEmpty }
 
             var errors: [LocalizationError] = []
-            let (unused, missing, missingFiles) = zip(
-                printUnusedTranslations(unusedTranslationKeys),
-                printMissingTranslations(untranslated),
-                detectMissingTranslationFiles(for: groups)
+            let (empty, unused, missing, missingFiles) = zip(
+				checkEmptyValues(from: allLocalizations),
+                checkUnusedTranslations(unusedTranslationKeys),
+                checkMissingTranslations(untranslated),
+                checkMissingTranslationFiles(for: groups)
             ).unsafeRun()
 
+			errors.append(contentsOf: empty)
             errors.append(contentsOf: unused)
             errors.append(contentsOf: missing)
             errors.append(contentsOf: missingFiles)
@@ -59,12 +61,19 @@ extension LocoAnalyzer {
         IO { groups.flatMap { $0.files }.flatMap { $0.data } }
     }
 
+	private func checkEmptyValues(from entries: [LocalizeEntry]) -> IO<[LocalizationError]> {
+		IO {
+			entries.filter { $0.data?.isEmpty == true }
+			.map { .emptyValue(key: $0.key, path: $0.path, linenumber: $0.lineNumber) }
+		}
+	}
+
     private func checkForDuplicateKeys(_ group: LocalizeableData) -> IO<[LocalizationError]> {
         IO {
             Dictionary(grouping: group.data, by: { $0 })
                 .filter { $1.count > 1 }
                 .flatMap { $0.value }
-                .map { .duplicate(key: $0.data, path: $0.path, linenumber: $0.lineNumber) }
+                .map { .duplicate(key: $0.key, path: $0.path, linenumber: $0.lineNumber) }
         }
     }
 
@@ -75,14 +84,14 @@ extension LocoAnalyzer {
             group.files.forEach { file in
                 let missing = allUniqueKeys.filter { file.data.contains($0) == false }
                 missing.forEach { translation in
-                    errors.append(.missingKey(name: translation.data, path: file.path))
+                    errors.append(.missingKey(name: translation.key, path: file.path))
                 }
             }
             return errors
         }
     }
 
-    private func detectMissingTranslationFiles(for groups: [LocalizationGroup]) -> IO<[LocalizationError]> {
+    private func checkMissingTranslationFiles(for groups: [LocalizationGroup]) -> IO<[LocalizationError]> {
         IO {
             let languages = Set(groups.flatMap { $0.files }.compactMap { $0.locale }.filter { $0 != "" })
             var errors: [LocalizationError] = []
@@ -102,16 +111,16 @@ extension LocoAnalyzer {
         }
     }
 
-    private func printUnusedTranslations(_ data: [LocalizeEntry]) -> IO<[LocalizationError]> {
-        IO { data.map { .unused(key: $0.data, path: $0.path, linenumber: $0.lineNumber) } }
+    private func checkUnusedTranslations(_ data: [LocalizeEntry]) -> IO<[LocalizationError]> {
+        IO { data.map { .unused(key: $0.key, path: $0.path, linenumber: $0.lineNumber) } }
     }
 
-    private func printMissingTranslations(_ inCode: [LocalizeableData]) -> IO<[LocalizationError]> {
+    private func checkMissingTranslations(_ inCode: [LocalizeableData]) -> IO<[LocalizationError]> {
         IO {
             var errors: [LocalizationError] = []
             inCode.forEach { locData in
                 locData.data.forEach { locale in
-                    errors.append(.missingTranslation(key: locale.data, path: locData.path, linenumber: locale.lineNumber))
+                    errors.append(.missingTranslation(key: locale.key, path: locData.path, linenumber: locale.lineNumber))
                 }
             }
             return errors

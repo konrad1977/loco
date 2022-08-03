@@ -8,6 +8,7 @@
 import Foundation
 
 public enum LocalizationError: Equatable {
+	case emptyValue(key: String, path: String, linenumber: Int)
     case duplicate(key: String, path: String, linenumber: Int)
     case missingKey(name: String, path: String)
     case unused(key: String, path: String, linenumber: Int)
@@ -23,6 +24,8 @@ extension LocalizationError: CustomStringConvertible {
 
     public var coloredDescription: String {
         switch self {
+		case let .emptyValue(key, path, linenumber):
+			return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " empty key found for: ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
         case let .duplicate(key, path, linenumber):
             return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " duplicate key found for: ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
         case let .missingKey(name, path):
@@ -38,6 +41,8 @@ extension LocalizationError: CustomStringConvertible {
 
     public var description: String {
         switch self {
+		case let .emptyValue(key, path, linenumber):
+			return "\(path):\(linenumber): warning: empty key found for: '\(unquote(key))'"
         case let .duplicate(key, path, linenumber):
             return "\(path):\(linenumber): warning: duplicate key found for: '\(unquote(key))'"
         case let .missingKey(name, path):

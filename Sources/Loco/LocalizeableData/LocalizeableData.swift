@@ -9,25 +9,26 @@ import Foundation
 
 public struct LocalizeEntry {
     let path: String
-    let data: String
+	let key: String
+	var data: String?
     let lineNumber: Int
 }
 
 extension LocalizeEntry: Hashable {
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(data)
+        hasher.combine(key)
     }
 }
 
 extension LocalizeEntry: Equatable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.data == rhs.data
+        return lhs.key == rhs.key
     }
 }
 
 extension LocalizeEntry: CustomStringConvertible {
     public var description: String {
-        "./\(path):\(lineNumber) \(data)"
+        "./\(path):\(lineNumber) \(key)"
     }
 }
 

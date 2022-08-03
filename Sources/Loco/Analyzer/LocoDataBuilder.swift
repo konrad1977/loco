@@ -1,12 +1,11 @@
 import Foundation
 import Funswift
 
-extension RangeExpression where Bound == String.Index  {
-    func nsRange<S: StringProtocol>(in string: S) -> NSRange { .init(self, in: string) }
-}
+
+
 
 public struct LocoDataBuilder {
-    let pattern = #"("[^\"]+")\s+=\s+\"[^\"]+\""#
+    let pattern = #"("[^\"]+")\s+=\s+\"([^\"]?)\""#
     let sourcePattern = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
     let localePathData = #"(\w{2}-\w{2})\.lproj"#
     public init() {}
@@ -83,7 +82,7 @@ extension LocoDataBuilder {
 	}
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherRegexData(pattern, groupIndex: 1) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherLocalizedData(pattern) >>> LocoDataBuilder.run) }
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
@@ -149,30 +148,60 @@ extension LocoDataBuilder {
         }
     }
 
+	private func gatherLocalizedData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
+		return { sourcefile in
+			IO {
+				do {
+					let data = String(sourcefile.data)
+					let dataNS = data as NSString
+					let regex = try NSRegularExpression(pattern: pattern, options: [])
+
+					let entries: [LocalizeEntry] = regex.matches(
+						in: data,
+						options: [],
+						range: NSMakeRange(0, dataNS.length)
+					).map { match in
+
+						guard
+							let keyRange = Range(match.range(at: 1), in: data),
+							let wordRange = Range(match.range(at: 2), in: data)
+						else { return LocalizeEntry(path: sourcefile.path, key: "", lineNumber: 0) }
+
+						let key = String(data[keyRange])
+						let extendedData = String(data[wordRange])
+						let lineNumber = data.countLines(upTo: match.range(at: 1))
+						return LocalizeEntry(path: sourcefile.path, key: key, data: extendedData, lineNumber: lineNumber)
+					}
+					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
+				} catch {
+					print(error)
+					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
+				}
+			}
+		}
+	}
+
     private func gatherRegexData(_ pattern: String, groupIndex: Int) -> (Sourcefile) -> IO<LocalizeableData> {
         return { sourcefile in
             IO {
                 do {
                     let data = String(sourcefile.data)
-                    let range = NSRange(data.startIndex..<data.endIndex,
-                                                          in: data)
+					let dataNS = data as NSString
 
                     let regex = try NSRegularExpression(pattern: pattern, options: [])
-                    var entries: [LocalizeEntry] = []
-                    regex.enumerateMatches(in: data, range: range) { (match, _, _) in
+					let entries: [LocalizeEntry] = regex.matches(
+						in: data,
+						options: [],
+						range: NSMakeRange(0, dataNS.length)
+					)
+					.map { match in
 
-                        guard let match = match, let range = Range(match.range(at: groupIndex), in: data)
-                        else { return }
+                        guard let range = Range(match.range(at: groupIndex), in: data)
+						else { return LocalizeEntry(path: sourcefile.path, key: "", lineNumber: 0) }
+
                         let subStrmatch = String(data[range])
-
-                        do {
-                            let regex = try NSRegularExpression(pattern: "\n", options: [])
-                            let subRange = range.nsRange(in: subStrmatch)
-                            let lineNumber = regex.numberOfMatches(in: data, range: NSMakeRange(0, subRange.location)) + 1
-                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: lineNumber))
-                        } catch {
-                            entries.append(LocalizeEntry(path: sourcefile.path, data: subStrmatch, lineNumber: 0))
-                        }
+						let lineNumber = data.countLines(upTo: match.range(at: groupIndex))
+						return LocalizeEntry(path: sourcefile.path, key: subStrmatch, lineNumber: lineNumber)
                     }
                     return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
                 } catch {
