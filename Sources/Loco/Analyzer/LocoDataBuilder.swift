@@ -1,11 +1,8 @@
 import Foundation
 import Funswift
 
-
-
-
 public struct LocoDataBuilder {
-    let pattern = #"("[^\"]+")\s+=\s+\"([^\"]?)\""#
+    let localizePattern = #"("[^\"]+")\s+=\s+\"([^\"]?)\""#
     let sourcePattern = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
     let localePathData = #"(\w{2}-\w{2})\.lproj"#
     public init() {}
@@ -82,7 +79,7 @@ extension LocoDataBuilder {
 	}
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherLocalizedData(pattern) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherLocalizedData(localizePattern) >>> LocoDataBuilder.run) }
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
@@ -105,27 +102,6 @@ extension LocoDataBuilder {
         }
     }
 
-    private func fetchLocaleData(_ path: String) -> String {
-        do {
-            let regex = try NSRegularExpression(
-                pattern: localePathData,
-                options: []
-            )
-            let range = NSRange(path.startIndex..<path.endIndex,
-                                  in: path)
-            var locale = ""
-            regex.enumerateMatches(in: path, range: range) { (match, _, _) in
-
-                guard let match = match, let range = Range(match.range(at: 1), in: path)
-                else { return }
-
-                locale = String(path[range])
-            }
-            return locale
-        } catch {
-            return ""
-        }
-    }
 
     private func buildLocalizationGroups(_ files: [LocalizeableData]) -> IO<[LocalizationGroup]> {
         IO {
@@ -148,6 +124,19 @@ extension LocoDataBuilder {
         }
     }
 
+	private func fetchLocaleData(_ path: String) -> String {
+		guard let regex = try? NSRegularExpression(pattern: localePathData, options: [])
+        else { return "" }
+
+		let range = NSRange(path.startIndex..<path.endIndex, in: path)
+    	return regex.matches(in: path, options: [], range: range).map { match in
+			guard let range = Range(match.range(at: 1), in: path)
+            else { return "" }
+
+            return String(path[range])
+		}.first ?? ""
+	}
+
 	private func gatherLocalizedData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
 		return { sourcefile in
 			IO {
@@ -159,7 +148,7 @@ extension LocoDataBuilder {
 					let entries: [LocalizeEntry] = regex.matches(
 						in: data,
 						options: [],
-						range: NSMakeRange(0, dataNS.length)
+						range: NSRange(location: 0, length: dataNS.length)
 					).map { match in
 
 						guard
@@ -174,7 +163,6 @@ extension LocoDataBuilder {
 					}
 					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
 				} catch {
-					print(error)
 					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
 				}
 			}
@@ -192,7 +180,7 @@ extension LocoDataBuilder {
 					let entries: [LocalizeEntry] = regex.matches(
 						in: data,
 						options: [],
-						range: NSMakeRange(0, dataNS.length)
+						range: NSRange(location: 0, length: dataNS.length)
 					)
 					.map { match in
 

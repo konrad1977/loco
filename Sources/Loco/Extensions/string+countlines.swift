@@ -9,11 +9,8 @@ import Foundation
 
 extension String {
 	func countLines(upTo: NSRange) -> Int {
-		do {
-			let regex = try NSRegularExpression(pattern: "\n", options: [])
-			return regex.numberOfMatches(in: self, options: [], range: NSMakeRange(0, upTo.location)) + 1
-		} catch {
-			return 0
-		}
+		guard let regex = try? NSRegularExpression(pattern: "\n", options: [])
+        else { return 0 }
+		return regex.numberOfMatches(in: self, options: [], range: NSRange(location: 0, length: upTo.location)) + 1
 	}
 }
