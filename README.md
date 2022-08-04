@@ -24,10 +24,21 @@ Loco is a extremly fast CLI linter for Localization.strings and swift files.
 
 #### Installation
 Compile the project using terminal (or Xcode)
+
+##### Release
+```shell
+swift build -c release
+```
+
+##### Debug
 ```shell
 swift build
 ```
-Copy the loco binary from *.build/debug* to */usr/local/bin/*
+
+Copy the loco binary from either .build/release or .build/debug to
+```shell
+/usr/local/bin
+```
 
 ## How to use
 Just run loco from your project root.
