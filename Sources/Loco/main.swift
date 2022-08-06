@@ -37,7 +37,6 @@ private func lintFile(file: String, args: [String]) {
 	.unsafeRun()
 }
 
-
 func printTime(_ value: Double) -> IO<Void> {
     IO { print("Total time: " + "\(value)".textColor(.accentColor) + " seconds") }
 }

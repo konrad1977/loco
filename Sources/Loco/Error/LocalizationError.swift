@@ -14,6 +14,7 @@ public enum LocalizationError: Equatable {
     case unused(key: String, path: String, linenumber: Int)
     case missingFile(name: String)
     case missingTranslation(key: String, path: String, linenumber: Int)
+	case missingSemicolon(path: String, linenumber: Int)
 }
 
 extension LocalizationError: CustomStringConvertible {
@@ -36,6 +37,8 @@ extension LocalizationError: CustomStringConvertible {
             return "\(name) " + "warning:".textColor(.warningColor) + " file is missing. You should create a file".fontStyle(.italic)
         case let .missingTranslation(key, path, linenumber):
             return "\(path):\(linenumber) " + "warning:".textColor(.warningColor) + " missing translation found for ".fontStyle(.italic) + "'\(unquote(key))'".textColor(.keyColor)
+		case let .missingSemicolon(path, linenumber):
+			return "\(path):\(linenumber) " + "error:".textColor(.errorColor) + " missing semicolon ".fontStyle(.italic)
         }
     }
 
@@ -53,6 +56,8 @@ extension LocalizationError: CustomStringConvertible {
             return "\(name) info: file is missing. You should create a file"
         case let .missingTranslation(key, path, linenumber):
             return "\(path):\(linenumber): warning: missing translation found for '\(unquote(key))'"
+		case let .missingSemicolon(path, linenumber):
+			return "\(path):\(linenumber): error: missing semicolon found"
         }
     }
 }

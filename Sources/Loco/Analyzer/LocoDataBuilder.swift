@@ -2,9 +2,10 @@ import Foundation
 import Funswift
 
 public struct LocoDataBuilder {
-    let localizePattern = #"("[^\"]+")\s+=\s+\"([^\"]?)\""#
-    let sourcePattern = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
-    let localePathData = #"(\w{2}-\w{2})\.lproj"#
+    let localizePatternRegex = #"("[^\"]+")\s+=\s+\"([^\"]+)\"\s?;"#
+    let sourcePatternRegex = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
+    let localePathDataRegex = #"(\w{2}-\w{2})\.lproj"#
+	let missingSemicolonRegex = #"(^\"(?:(?!;).)*$)"#
     public init() {}
 }
 
@@ -13,7 +14,7 @@ extension LocoDataBuilder {
     public func sourceFiles(
         from startPath: String,
         filter: PathFilter = .custom(["Build"])
-    ) -> IO<([LocalizationGroup], [LocalizeableData])> {
+	) -> IO<([LocalizationGroup], [LocalizeableData], [LocalizationError])> {
         zip(
             IO.pure(startPath)
                 .flatMap(
@@ -27,13 +28,19 @@ extension LocoDataBuilder {
                     supportedFiletypes([.swift], filter: filter)
                     >=> buildSourcePaths
                     >=> flattenSourceData
-            )
+            ),
+			IO.pure(startPath)
+				.flatMap(
+					supportedFiletypes(.localizeable, filter: filter)
+					>=> buildMissingSemicolonErrors
+					>=> flattenErrors
+			)
         )
     }
 
 	public func buildData(for file: String,
 						 filter: PathFilter = .custom(["Build"])
-	) -> IO<([LocalizationGroup], [LocalizeableData])> {
+	) -> IO<([LocalizationGroup], [LocalizeableData], [LocalizationError])> {
 		zip(
 			IO.pure(findProjectRoot(filePath: file).unsafeRun())
 				.flatMap(
@@ -43,18 +50,20 @@ extension LocoDataBuilder {
 					>=> buildLocalizationGroups
 				),
 			IO { [file] }
-				.flatMap(buildSourcePaths >=> flattenSourceData)
+				.flatMap(buildSourcePaths >=> flattenSourceData),
+			IO.pure([])
 		)
 	}
 }
 
 // MARK: - Privates
 extension LocoDataBuilder {
+
     private static func run<T>(io: IO<T>) -> T {
         io.unsafeRun()
     }
 
-	public func findProjectRoot(filePath: String) -> IO<String> {
+	private func findProjectRoot(filePath: String) -> IO<String> {
 		IO {
 			var path = filePath
 			repeat {
@@ -65,30 +74,32 @@ extension LocoDataBuilder {
 	}
 
 	private func isRoot(path: String) -> Bool {
-		do {
-			return try FileManager.default.contentsOfDirectory(atPath: path).contains(".git")
-		} catch {
-			return false
-		}
+		(try? FileManager.default.contentsOfDirectory(atPath: path).contains(".git")) ?? false
 	}
 
 	private func goUpADirectory(from path: String) -> IO<String> {
-		IO {
-			URL(fileURLWithPath: path).pathComponents.dropLast().joined(separator: "/")
-		}
+		IO { URL(fileURLWithPath: path).pathComponents.dropLast().joined(separator: "/") }
+	}
+
+	private func buildMissingSemicolonErrors(_ paths: [String]) -> IO<[[LocalizationError]]> {
+		IO { paths.map(createFileInfo >=> gatherLocalizedErrors(missingSemicolonRegex) >>> LocoDataBuilder.run) }
 	}
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherLocalizedData(localizePattern) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherLocalizedData(localizePatternRegex) >>> LocoDataBuilder.run) }
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherRegexData(sourcePattern, groupIndex: 2) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherSourceFileData(sourcePatternRegex) >>> LocoDataBuilder.run) }
     }
 
     private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
-        IO { files.compactMap { $0 }.filter { $0.data.isEmpty == false } }
+        IO { files.compactMap(identity).filter { $0.data.isEmpty == false } }
     }
+
+	private func flattenErrors(_ errors: [[LocalizationError]]) -> IO<[LocalizationError]> {
+		IO { errors.flatMap(identity) }
+	}
 
     private func fetchLocalizationLanguage(_ localeData: [LocalizeableData]) -> IO<[LocalizeableData]> {
         IO {
@@ -102,10 +113,8 @@ extension LocoDataBuilder {
         }
     }
 
-
     private func buildLocalizationGroups(_ files: [LocalizeableData]) -> IO<[LocalizationGroup]> {
         IO {
-
             let sorted = files.sorted { f1, f2 in
                 if
                     let firstLast = f1.pathComponents.last,
@@ -125,7 +134,7 @@ extension LocoDataBuilder {
     }
 
 	private func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: localePathData, options: [])
+		guard let regex = try? NSRegularExpression(pattern: localePathDataRegex, options: [])
         else { return "" }
 
 		let range = NSRange(path.startIndex..<path.endIndex, in: path)
@@ -137,67 +146,71 @@ extension LocoDataBuilder {
 		}.first ?? ""
 	}
 
+	private func gatherFrom(regex pattern: String, sourcefile: Sourcefile) -> IO<[SourceValues]> {
+		IO {
+			guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
+			else { return [] }
+
+			let data = String(sourcefile.data)
+			let dataNS = data as NSString
+
+			let result: [SourceValues] = regex.matches(
+				in: data,
+				options: [],
+				range: NSRange(location: 0, length: dataNS.length)
+			)
+			.map { match in
+				let lineNumber = data.countLines(upTo: match.range(at: 0))
+				var matches: [String] = []
+				for rangeIndex in 1..<match.numberOfRanges {
+					if let range = Range(match.range(at: rangeIndex), in: data) {
+						matches.append(String(data[range]))
+					}
+				}
+				return SourceValues(lineNumber: lineNumber, keys: matches)
+			}
+			return result
+		}
+	}
+
 	private func gatherLocalizedData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
 		return { sourcefile in
 			IO {
-				do {
-					let data = String(sourcefile.data)
-					let dataNS = data as NSString
-					let regex = try NSRegularExpression(pattern: pattern, options: [])
-
-					let entries: [LocalizeEntry] = regex.matches(
-						in: data,
-						options: [],
-						range: NSRange(location: 0, length: dataNS.length)
-					).map { match in
-
-						guard
-							let keyRange = Range(match.range(at: 1), in: data),
-							let wordRange = Range(match.range(at: 2), in: data)
-						else { return LocalizeEntry(path: sourcefile.path, key: "", lineNumber: 0) }
-
-						let key = String(data[keyRange])
-						let extendedData = String(data[wordRange])
-						let lineNumber = data.countLines(upTo: match.range(at: 1))
-						return LocalizeEntry(path: sourcefile.path, key: key, data: extendedData, lineNumber: lineNumber)
+				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
+					.map { values in values.map {
+                        LocalizeEntry(path: sourcefile.path, key: $0.keys.first ?? "" , data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 					}
-					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
-				} catch {
-					return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
-				}
+				}.unsafeRun()
+				return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
 			}
 		}
 	}
 
-    private func gatherRegexData(_ pattern: String, groupIndex: Int) -> (Sourcefile) -> IO<LocalizeableData> {
+    private func gatherSourceFileData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
         return { sourcefile in
             IO {
-                do {
-                    let data = String(sourcefile.data)
-					let dataNS = data as NSString
+				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
+					.map { values in values.map {
+							LocalizeEntry(path: sourcefile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+						}
+					}.unsafeRun()
 
-                    let regex = try NSRegularExpression(pattern: pattern, options: [])
-					let entries: [LocalizeEntry] = regex.matches(
-						in: data,
-						options: [],
-						range: NSRange(location: 0, length: dataNS.length)
-					)
-					.map { match in
-
-                        guard let range = Range(match.range(at: groupIndex), in: data)
-						else { return LocalizeEntry(path: sourcefile.path, key: "", lineNumber: 0) }
-
-                        let subStrmatch = String(data[range])
-						let lineNumber = data.countLines(upTo: match.range(at: groupIndex))
-						return LocalizeEntry(path: sourcefile.path, key: subStrmatch, lineNumber: lineNumber)
-                    }
-                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
-                } catch {
-                    return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: [])
-                }
+				return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
             }
         }
     }
+
+	private func gatherLocalizedErrors(_ pattern: String) -> (Sourcefile) -> IO<[LocalizationError]> {
+		return { sourcefile in
+			IO {
+				return gatherFrom(regex: pattern, sourcefile: sourcefile)
+					.map { values in values.map {
+						.missingSemicolon(path: sourcefile.path, linenumber: $0.lineNumber)
+					}
+				}.unsafeRun()
+			}
+		}
+	}
 
     private func supportedFiletypes(_ supportedFiletypes: Filetype, filter: PathFilter) -> (String) -> IO<[String]> {
         return { path in

@@ -10,7 +10,7 @@ import Funswift
 
 struct LocoAnalyzer {
     let args: [String]
-    func analyze(io: IO<([LocalizationGroup], [LocalizeableData])>) -> IO<Void> {
+    func analyze(io: IO<([LocalizationGroup], [LocalizeableData], [LocalizationError])>) -> IO<Void> {
         io.flatMap(handleLocalizations)
     }
 
@@ -21,8 +21,14 @@ struct LocoAnalyzer {
 
 extension LocoAnalyzer {
 
-    private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableData]) -> IO<Void> {
-        IO { 
+	private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizeableData], _ compileErrors: [LocalizationError]) -> IO<Void> {
+        IO {
+			let disableColoredOutput = Parser(keyword: "--no-color", args: args).hasArgument()
+
+			compileErrors.forEach { error in
+				print(disableColoredOutput ? error : error.coloredDescription)
+			}
+			
             let allLocalizations = allLocalizations(from: groups).unsafeRun()
             let unusedTranslationKeys = allLocalizations.filter { loc in inCode.flatMap { $0.data }.contains(loc) == false }
             let untranslated = inCode.filter { $0.data.filter { allLocalizations.contains($0) }.isEmpty }
@@ -49,7 +55,6 @@ extension LocoAnalyzer {
                 errors.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
             }
 
-            let disableColoredOutput = Parser(keyword: "--no-color", args: args).hasArgument()
             errors.forEach { error in
                 print(disableColoredOutput ? error : error.coloredDescription)
             }
