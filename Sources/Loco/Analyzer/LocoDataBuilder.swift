@@ -2,7 +2,7 @@ import Foundation
 import Funswift
 
 public struct LocoDataBuilder {
-    let localizePatternRegex = #"("[^\"]+")\s+=\s+\"([^\"]?)\""#
+    let localizePatternRegex = #"^(\"[^\"]+\")\s?=\s?(\"[^\"]*?\")"#
     let sourcePatternRegex = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
     let localePathDataRegex = #"(\w{2}-\w{2})\.lproj"#
 	let missingSemicolonRegex = #"(^\"(?:(?!;).)*$)"#
@@ -148,7 +148,7 @@ extension LocoDataBuilder {
 
 	private func gatherFrom(regex pattern: String, sourcefile: Sourcefile) -> IO<[SourceValues]> {
 		IO {
-			guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
 			else { return [] }
 
 			let data = String(sourcefile.data)
@@ -156,7 +156,7 @@ extension LocoDataBuilder {
 
 			let result: [SourceValues] = regex.matches(
 				in: data,
-				options: [.withoutAnchoringBounds],
+				options: [],
 				range: NSRange(location: 0, length: dataNS.length)
 			)
 			.map { match in
