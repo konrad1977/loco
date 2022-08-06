@@ -6,6 +6,7 @@
 Loco is a extremly fast CLI linter for Localization.strings and swift files.
 
 ### What does it check?
+- Missing semicolons
 - Untranslated strings in your swift files
 - Empty values
 - Duplicate keys
@@ -64,6 +65,8 @@ else
 fi
 ```
 !["XcodeSetup"](https://github.com/konrad1977/loco/blob/main/images/xcode-setup.png)
+
+*Make sure you run loco before compile sources to get info where you are missing a semicolon*
 
 Disable colored output
 ```shell
