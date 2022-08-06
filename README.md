@@ -3,10 +3,10 @@
 ![](https://img.shields.io/github/languages/top/konrad1977/loco)
 
 # Loco
-Loco is a extremly fast CLI linter for Localization.strings and swift files.
+Loco is an extremly fast CLI linter for Localization.strings and swift files.
 
 ### What does it check?
-- Missing semicolons
+- Semicolons
 - Untranslated strings in your swift files
 - Empty values
 - Duplicate keys
@@ -22,6 +22,7 @@ Loco is a extremly fast CLI linter for Localization.strings and swift files.
 - Does not lint Localization.dict
 - Does not lint Storyboards
 - Will have false positive and its untested
+- No unit tests (probably next task)
 
 #### Installation
 Compile the project using terminal (or Xcode)
@@ -42,18 +43,8 @@ Copy the loco binary from either .build/release or .build/debug to
 ```
 
 ## How to use
-Just run loco from your project root.
-```shell
-$ loco
-```
 
-## Arguments
-Lint individual swift files (check for missing translations only)
-```shell
-$ loco -f "/myProject/Sources/Subfolder/somefile.swift"
-```
-
-## Integrate with Xcode
+### Integrate with Xcode
 !["Xcode"](https://github.com/konrad1977/loco/blob/main/images/xcode.png)
 
 In build phases. Add run script (+)
@@ -67,6 +58,18 @@ fi
 !["XcodeSetup"](https://github.com/konrad1977/loco/blob/main/images/xcode-setup.png)
 
 *Make sure you run loco before compile sources to get info where you are missing a semicolon*
+
+### From terminal
+Just run loco from your project root.
+```shell
+$ loco
+```
+
+#### Arguments
+Lint individual swift files (check for missing translations only)
+```shell
+$ loco -f "/myProject/Sources/Subfolder/somefile.swift"
+```
 
 Disable colored output
 ```shell
