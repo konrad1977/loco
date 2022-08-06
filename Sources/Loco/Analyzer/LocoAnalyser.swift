@@ -71,8 +71,9 @@ extension LocoAnalyzer {
 
 	private func checkEmptyValues(from entries: [LocalizeEntry]) -> IO<[LocalizationError]> {
 		IO {
-			entries.filter { $0.data?.isEmpty == true }
-			.map { .emptyValue(key: $0.key, path: $0.path, linenumber: $0.lineNumber) }
+            entries
+                .filter { $0.data?.isEmpty == true || $0.data == "\"\"" }
+                .map { .emptyValue(key: $0.key, path: $0.path, linenumber: $0.lineNumber) }
 		}
 	}
 
