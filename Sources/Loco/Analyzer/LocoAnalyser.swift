@@ -33,7 +33,7 @@ extension LocoAnalyzer {
             let unusedTranslationKeys = allLocalizations.filter { loc in inCode.flatMap { $0.data }.contains(loc) == false }
             let untranslated = inCode.filter { $0.data.filter { allLocalizations.contains($0) }.isEmpty }
 
-            var errors: [LocalizationError] = []
+            var warnings: [LocalizationError] = []
             let (empty, unused, missing, missingFiles) = zip(
 				checkEmptyValues(from: allLocalizations),
                 checkUnusedTranslations(unusedTranslationKeys),
@@ -41,24 +41,27 @@ extension LocoAnalyzer {
                 checkMissingTranslationFiles(for: groups)
             ).unsafeRun()
 
-			errors.append(contentsOf: empty)
-            errors.append(contentsOf: unused)
-            errors.append(contentsOf: missing)
-            errors.append(contentsOf: missingFiles)
+			warnings.append(contentsOf: empty)
+			warnings.append(contentsOf: unused)
+			warnings.append(contentsOf: missing)
+			warnings.append(contentsOf: missingFiles)
 
             let files = groups.flatMap { $0.files }
             files.forEach {
-                errors.append(contentsOf: checkForDuplicateKeys($0).unsafeRun())
+				warnings.append(contentsOf: checkForDuplicateKeys($0).unsafeRun())
             }
 
             groups.forEach { group in
-                errors.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
+				warnings.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
             }
 
-            errors.forEach { error in
+			warnings.forEach { error in
                 print(disableColoredOutput ? error : error.coloredDescription)
             }
-            print("Found " + "\(errors.count)".textColor(.warningColor) + " issues.")
+			if compileErrors.isEmpty == false {
+				print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
+			}
+            print("Found " + "\(warnings.count)".textColor(.warningColor) + " issues.")
         }
     }
 

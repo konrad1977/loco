@@ -18,10 +18,10 @@ enum TerminalFontStyle: String {
 }
 
 enum TerminalColor: Int {
-    case warningColor = 203
-    case errorColor = 2
+    case warningColor = 3
+    case errorColor = 203
     case keyColor = 36
-    case infoColor = 3
+    case infoColor = 2
     case accentColor = 35
     case barColor = 39
 }
