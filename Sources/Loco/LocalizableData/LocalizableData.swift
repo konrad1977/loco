@@ -35,11 +35,12 @@ struct LocalizableData {
 
 extension LocalizableData {
     var pathComponents: [String] {
-        return URL(fileURLWithPath: path).pathComponents
+        URL(fileURLWithPath: path).pathComponents
     }
 
     func replaceLanguage(with lang: String) -> String? {
-        guard let cpy = pathComponents.last else { return nil }
+        guard let cpy = pathComponents.last 
+        else { return nil }
         return pathComponents.dropLast(2).joined(separator: "/") + "/" + lang + ".lproj/" + cpy
     }
 }

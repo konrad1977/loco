@@ -42,7 +42,7 @@ extension LocoDataBuilder {
     }
 
 	func buildData(for file: String,
-						 filter: PathFilter = .custom(["Build"])
+				   filter: PathFilter = .custom(["Build"])
 	) -> IO<([LocalizationGroup], [LocalizableData], [LocalizationError])> {
 		zip(
 			IO.pure(findProjectRoot(filePath: file).unsafeRun())
@@ -71,7 +71,7 @@ extension LocoDataBuilder {
 			var path = filePath
 			repeat {
 				path = goUpADirectory(from: path).unsafeRun()
-			} while !isRoot(path: path)
+			} while isRoot(path: path) == false
 			return path
 		}
 	}
@@ -97,7 +97,7 @@ extension LocoDataBuilder {
     }
 
     private func flattenSourceData(_ files: [LocalizableData]) -> IO<[LocalizableData]> {
-        IO { files.compactMap(identity).filter { !$0.data.isEmpty } }
+        IO { files.compactMap(identity).filter { $0.data.isEmpty == false } }
     }
 
 	private func flattenErrors(_ errors: [[LocalizationError]]) -> IO<[LocalizationError]> {
@@ -126,7 +126,7 @@ extension LocoDataBuilder {
                 } else {
                     return f1.filename < f2.filename
                 }
-            }.filter { !$0.filename.contains("InfoPlist") }
+            }.filter { $0.filename.contains("InfoPlist") == false }
 
             return Dictionary(grouping: sorted) { item in
                 "\(item.filename)" + (item.pathComponents.dropLast(2).last ?? "")
@@ -141,7 +141,7 @@ extension LocoDataBuilder {
 			IO {
 				let entries = gatherFrom(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
-                        LocalizeEntry(path: sourceFile.path, key: $0.keys.first ?? "" , data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+                        LocalizeEntry(path: sourceFile.path, key: $0.keys.first ?? "", data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 					}
 				}.unsafeRun()
 				return LocalizableData(path: sourceFile.path, filename: sourceFile.name, filetype: sourceFile.filetype, data: entries)
@@ -195,7 +195,8 @@ extension LocoDataBuilder {
     }
 
     private func fileData(from path: String) -> IO<String.SubSequence> {
-        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...] else { return IO { "" } }
+        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...] 
+        else { return IO { "" } }
         return IO { file }
     }
 
@@ -211,21 +212,24 @@ extension LocoDataBuilder {
 extension LocoDataBuilder {
 
 	func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: []) else { return "" }
+		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: []) 
+        else { return "" }
 
     	return regex.matches(
           in: path,
           options: [],
           range: NSRange(location: 0, length: path.count)
         ).compactMap { match in
-			guard let range = Range(match.range(at: 1), in: path) else { return nil }
+			guard let range = Range(match.range(at: 1), in: path) 
+            else { return nil }
             return String(path[range])
 		}.first ?? ""
 	}
 
 	func gatherFrom(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines]) else { return [] }
+            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines]) 
+            else { return [] }
 
 			let data = String(sourceFile.data)
 			let result: [SourceValues] = regex.matches(

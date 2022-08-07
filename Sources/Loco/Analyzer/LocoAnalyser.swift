@@ -51,7 +51,8 @@ extension LocoAnalyzer {
 			warnings.forEach { error in
                 print(disableColoredOutput ? error : error.coloredDescription)
             }
-			if !compileErrors.isEmpty {
+
+			if compileErrors.isEmpty == false {
 				print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
 			}
             print("Found " + "\(warnings.count)".textColor(.warningColor) + " issues.")
@@ -100,7 +101,7 @@ extension LocoAnalyzer {
 
             groups.forEach { group in
                 let languagesInGroup = group.files.compactMap { $0.locale }
-                let missingLanguage = languages.filter { !languagesInGroup.contains($0) }
+                let missingLanguage = languages.filter { languagesInGroup.contains($0) == false }
                 if !missingLanguage.isEmpty {
                     missingLanguage.forEach { lang in
                         if let file = group.files.first?.replaceLanguage(with: lang)?.dropFirst() {
