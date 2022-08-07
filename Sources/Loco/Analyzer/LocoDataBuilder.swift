@@ -1,11 +1,14 @@
 import Foundation
 import Funswift
 
+enum RegexPattern: String {
+    case extractKeyAndValue = #"^(\"[^\"]+\")\s?=\s?(\"[^\"]*?\")"#
+    case querySourceCode = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
+    case extractLocaleFromPath = #"(\w{2}-\w{2})\.lproj"#
+	case missingSemicolon = #"(^\"(?:(?!;).)*$)"#
+}
+
 public struct LocoDataBuilder {
-    let localizePatternRegex = #"^(\"[^\"]+\")\s?=\s?(\"[^\"]*?\")"#
-    let sourcePatternRegex = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
-    let localePathDataRegex = #"(\w{2}-\w{2})\.lproj"#
-	let missingSemicolonRegex = #"(^\"(?:(?!;).)*$)"#
     public init() {}
 }
 
@@ -82,15 +85,15 @@ extension LocoDataBuilder {
 	}
 
 	private func buildMissingSemicolonErrors(_ paths: [String]) -> IO<[[LocalizationError]]> {
-		IO { paths.map(createFileInfo >=> gatherLocalizedErrors(missingSemicolonRegex) >>> LocoDataBuilder.run) }
+		IO { paths.map(createFileInfo >=> gatherLocalizedErrors(.missingSemicolon) >>> LocoDataBuilder.run) }
 	}
 
     private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherLocalizedData(localizePatternRegex) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherLocalizedData(.extractKeyAndValue) >>> LocoDataBuilder.run) }
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
-        IO { paths.map(createFileInfo >=> gatherSourceFileData(sourcePatternRegex) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherSourceFileData(.querySourceCode) >>> LocoDataBuilder.run) }
     }
 
     private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
@@ -134,7 +137,7 @@ extension LocoDataBuilder {
     }
 
 	private func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: localePathDataRegex, options: [])
+		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: [])
         else { return "" }
 
 		let range = NSRange(path.startIndex..<path.endIndex, in: path)
@@ -146,18 +149,17 @@ extension LocoDataBuilder {
 		}.first ?? ""
 	}
 
-	private func gatherFrom(regex pattern: String, sourcefile: Sourcefile) -> IO<[SourceValues]> {
-		IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines])
+	private func gatherFrom(regex pattern: RegexPattern, sourcefile: Sourcefile) -> IO<[SourceValues]> {
+        IO {
+            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines])
 			else { return [] }
 
 			let data = String(sourcefile.data)
-			let dataNS = data as NSString
 
 			let result: [SourceValues] = regex.matches(
 				in: data,
 				options: [],
-				range: NSRange(location: 0, length: dataNS.length)
+				range: NSRange(location: 0, length: data.count)
 			)
 			.map { match in
 				let lineNumber = data.countLines(upTo: match.range(at: 0))
@@ -173,7 +175,7 @@ extension LocoDataBuilder {
 		}
 	}
 
-	private func gatherLocalizedData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
+	private func gatherLocalizedData(_ pattern: RegexPattern) -> (Sourcefile) -> IO<LocalizeableData> {
 		return { sourcefile in
 			IO {
 				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
@@ -186,7 +188,7 @@ extension LocoDataBuilder {
 		}
 	}
 
-    private func gatherSourceFileData(_ pattern: String) -> (Sourcefile) -> IO<LocalizeableData> {
+    private func gatherSourceFileData(_ pattern: RegexPattern) -> (Sourcefile) -> IO<LocalizeableData> {
         return { sourcefile in
             IO {
 				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
@@ -200,7 +202,7 @@ extension LocoDataBuilder {
         }
     }
 
-	private func gatherLocalizedErrors(_ pattern: String) -> (Sourcefile) -> IO<[LocalizationError]> {
+	private func gatherLocalizedErrors(_ pattern: RegexPattern) -> (Sourcefile) -> IO<[LocalizationError]> {
 		return { sourcefile in
 			IO {
 				return gatherFrom(regex: pattern, sourcefile: sourcefile)
