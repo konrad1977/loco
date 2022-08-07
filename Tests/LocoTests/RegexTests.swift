@@ -21,22 +21,24 @@ class RegexTests: XCTestCase {
           NSLocalizedString("Something", comment: "A comment")
           Text("SomeText")
           Label("Someother Text")
-          String(localized: "Something")
+          String(localized: "More text")
         """
 
-        let sourcefile = Sourcefile(
+        let sourcefile = SourceFile(
           path: "/mocked",
           name: "File.swift",
           data: data[...],
           filetype: .swift
         )
         
-        let result = builder.gatherFrom(regex: .querySourceCode, sourcefile: sourcefile).unsafeRun()
+        let result = builder.gatherFrom(regex: .querySourceCode, sourceFile: sourcefile).unsafeRun()
         XCTAssertEqual(result.count, 3)
         XCTAssertEqual(result[0].lineNumber, 1)
         XCTAssertEqual(result[1].lineNumber, 2)
         XCTAssertEqual(result[2].lineNumber, 4)
 
-        print(result)
+        XCTAssertEqual(result[0].keys[1], "\"Something\"")
+        XCTAssertEqual(result[1].keys[1], "\"SomeText\"")
+        XCTAssertEqual(result[2].keys[1], "\"More text\"")
     }
 }
