@@ -1,38 +1,38 @@
 import Foundation
 import Funswift
 
-public struct Filetype: OptionSet {
+struct FileType: OptionSet {
 
-    public let rawValue: Int
+    let rawValue: Int
 
-    public static let swift = Filetype(rawValue: 1 << 0)
-    public static let localizeable = Filetype(rawValue: 1 << 1)
-    public static let objectiveC = Filetype(rawValue: 1 << 2)
+    static let swift = FileType(rawValue: 1 << 0)
+    static let localizable = FileType(rawValue: 1 << 1)
+    static let objectiveC = FileType(rawValue: 1 << 2)
 
-    public static let all: Filetype = [.swift, .objectiveC, .localizeable]
-    public static let empty: Filetype = []
+    static let all: FileType = [.swift, .objectiveC, .localizable]
+    static let empty: FileType = []
 
-    public init(rawValue: Int) {
+    init(rawValue: Int) {
         self.rawValue = rawValue
     }
 }
 
-extension Filetype {
-    public init(extension: String) {
-        switch `extension` {
+extension FileType {
+    public init(fileExtension: String) {
+        switch fileExtension {
         case "m", "h":
             self = .objectiveC
         case "swift":
             self = .swift
         case "strings":
-            self = .localizeable
+            self = .localizable
         default:
             self = .empty
         }
     }
 }
 
-extension Filetype {
+extension FileType {
 
     func elements() -> AnySequence<Self> {
 
@@ -54,16 +54,16 @@ extension Filetype {
 	}
 }
 
-extension Filetype {
+extension FileType {
     public var predicate: Predicate<String> {
         switch self {
         case .all:
             return anyOf(
-                Filetype.swift.predicate,
-                Filetype.localizeable.predicate,
-                Filetype.objectiveC.predicate
+                FileType.swift.predicate,
+                FileType.localizable.predicate,
+                FileType.objectiveC.predicate
             )
-        case .localizeable:
+        case .localizable:
             return Predicate { $0.hasSuffix(".strings") }
         case .swift:
             return Predicate { $0.hasSuffix(".swift") }

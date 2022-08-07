@@ -8,21 +8,21 @@ enum RegexPattern: String {
 	case missingSemicolon = #"(^\"(?:(?!;).)*$)"#
 }
 
-public struct LocoDataBuilder {
-    public init() {}
+struct LocoDataBuilder {
+    init() {}
 }
 
 extension LocoDataBuilder {
 
-    public func sourceFiles(
+    func sourceFiles(
         from startPath: String,
         filter: PathFilter = .custom(["Build"])
-	) -> IO<([LocalizationGroup], [LocalizeableData], [LocalizationError])> {
+	) -> IO<([LocalizationGroup], [LocalizableData], [LocalizationError])> {
         zip(
             IO.pure(startPath)
                 .flatMap(
-                    supportedFiletypes(.localizeable, filter: filter)
-                    >=> buildLocalizeablePaths
+                    supportedFiletypes(.localizable, filter: filter)
+                    >=> buildLocalizablePaths
                     >=> fetchLocalizationLanguage
                     >=> buildLocalizationGroups
             ),
@@ -34,21 +34,21 @@ extension LocoDataBuilder {
             ),
 			IO.pure(startPath)
 				.flatMap(
-					supportedFiletypes(.localizeable, filter: filter)
+					supportedFiletypes(.localizable, filter: filter)
 					>=> buildMissingSemicolonErrors
 					>=> flattenErrors
 			)
         )
     }
 
-	public func buildData(for file: String,
+	func buildData(for file: String,
 						 filter: PathFilter = .custom(["Build"])
-	) -> IO<([LocalizationGroup], [LocalizeableData], [LocalizationError])> {
+	) -> IO<([LocalizationGroup], [LocalizableData], [LocalizationError])> {
 		zip(
 			IO.pure(findProjectRoot(filePath: file).unsafeRun())
 				.flatMap(
-					supportedFiletypes(.localizeable, filter: filter)
-					>=> buildLocalizeablePaths
+					supportedFiletypes(.localizable, filter: filter)
+					>=> buildLocalizablePaths
 					>=> fetchLocalizationLanguage
 					>=> buildLocalizationGroups
 				),
@@ -71,7 +71,7 @@ extension LocoDataBuilder {
 			var path = filePath
 			repeat {
 				path = goUpADirectory(from: path).unsafeRun()
-			} while isRoot(path: path) == false
+			} while !isRoot(path: path)
 			return path
 		}
 	}
@@ -88,25 +88,25 @@ extension LocoDataBuilder {
 		IO { paths.map(createFileInfo >=> gatherLocalizedErrors(.missingSemicolon) >>> LocoDataBuilder.run) }
 	}
 
-    private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
+    private func buildLocalizablePaths(_ paths: [String]) -> IO<[LocalizableData]> {
         IO { paths.map(createFileInfo >=> gatherLocalizedData(.extractKeyAndValue) >>> LocoDataBuilder.run) }
     }
 
-    private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizeableData]> {
+    private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizableData]> {
         IO { paths.map(createFileInfo >=> gatherSourceFileData(.querySourceCode) >>> LocoDataBuilder.run) }
     }
 
-    private func flattenSourceData(_ files: [LocalizeableData]) -> IO<[LocalizeableData]> {
-        IO { files.compactMap(identity).filter { $0.data.isEmpty == false } }
+    private func flattenSourceData(_ files: [LocalizableData]) -> IO<[LocalizableData]> {
+        IO { files.compactMap(identity).filter { !$0.data.isEmpty } }
     }
 
 	private func flattenErrors(_ errors: [[LocalizationError]]) -> IO<[LocalizationError]> {
 		IO { errors.flatMap(identity) }
 	}
 
-    private func fetchLocalizationLanguage(_ localeData: [LocalizeableData]) -> IO<[LocalizeableData]> {
+    private func fetchLocalizationLanguage(_ localeData: [LocalizableData]) -> IO<[LocalizableData]> {
         IO {
-            localeData.map { LocalizeableData(
+            localeData.map { LocalizableData(
                 path: $0.path,
                 filename: $0.filename,
                 filetype: $0.filetype,
@@ -116,7 +116,7 @@ extension LocoDataBuilder {
         }
     }
 
-    private func buildLocalizationGroups(_ files: [LocalizeableData]) -> IO<[LocalizationGroup]> {
+    private func buildLocalizationGroups(_ files: [LocalizableData]) -> IO<[LocalizationGroup]> {
         IO {
             let sorted = files.sorted { f1, f2 in
                 if
@@ -126,56 +126,56 @@ extension LocoDataBuilder {
                 } else {
                     return f1.filename < f2.filename
                 }
-            }.filter { $0.filename.contains("InfoPlist") == false }
+            }.filter { !$0.filename.contains("InfoPlist") }
 
             return Dictionary(grouping: sorted) { item in
                 "\(item.filename)" + (item.pathComponents.dropLast(2).last ?? "")
-            }.map { (_, value: [LocalizeableData]) in
+            }.map { (_, value: [LocalizableData]) in
                 LocalizationGroup(files: value)
             }
         }
     }
 
-	private func gatherLocalizedData(_ pattern: RegexPattern) -> (Sourcefile) -> IO<LocalizeableData> {
-		return { sourcefile in
+	private func gatherLocalizedData(_ pattern: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
+		return { sourceFile in
 			IO {
-				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
+				let entries = gatherFrom(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
-                        LocalizeEntry(path: sourcefile.path, key: $0.keys.first ?? "" , data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+                        LocalizeEntry(path: sourceFile.path, key: $0.keys.first ?? "" , data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 					}
 				}.unsafeRun()
-				return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
+				return LocalizableData(path: sourceFile.path, filename: sourceFile.name, filetype: sourceFile.filetype, data: entries)
 			}
 		}
 	}
 
-    private func gatherSourceFileData(_ pattern: RegexPattern) -> (Sourcefile) -> IO<LocalizeableData> {
-        return { sourcefile in
+    private func gatherSourceFileData(_ pattern: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
+        return { sourceFile in
             IO {
-				let entries = gatherFrom(regex: pattern, sourcefile: sourcefile)
+				let entries = gatherFrom(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
-							LocalizeEntry(path: sourcefile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+							LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 						}
 					}.unsafeRun()
 
-				return LocalizeableData(path: sourcefile.path, filename: sourcefile.name, filetype: sourcefile.filetype, data: entries)
+				return LocalizableData(path: sourceFile.path, filename: sourceFile.name, filetype: sourceFile.filetype, data: entries)
             }
         }
     }
 
-	private func gatherLocalizedErrors(_ pattern: RegexPattern) -> (Sourcefile) -> IO<[LocalizationError]> {
-		return { sourcefile in
+	private func gatherLocalizedErrors(_ pattern: RegexPattern) -> (SourceFile) -> IO<[LocalizationError]> {
+		return { sourceFile in
 			IO {
-				return gatherFrom(regex: pattern, sourcefile: sourcefile)
+                return gatherFrom(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
-						.missingSemicolon(path: sourcefile.path, linenumber: $0.lineNumber)
+						.missingSemicolon(path: sourceFile.path, lineNumber: $0.lineNumber)
 					}
 				}.unsafeRun()
 			}
 		}
 	}
 
-    private func supportedFiletypes(_ supportedFiletypes: Filetype, filter: PathFilter) -> (String) -> IO<[String]> {
+    private func supportedFiletypes(_ supportedFiletypes: FileType, filter: PathFilter) -> (String) -> IO<[String]> {
         return { path in
             guard let paths = try? FileManager.default
                 .subpathsOfDirectory(atPath: path)
@@ -195,16 +195,15 @@ extension LocoDataBuilder {
     }
 
     private func fileData(from path: String) -> IO<String.SubSequence> {
-        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...]
-        else { return IO { "" } }
+        guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...] else { return IO { "" } }
         return IO { file }
     }
 
-    private func createFileInfo(_ path: String) -> IO<Sourcefile> {
+    private func createFileInfo(_ path: String) -> IO<SourceFile> {
         fileData(from: path).map { data in
             let fileUrl = URL(fileURLWithPath: path)
-            let filetype = Filetype(extension: fileUrl.pathExtension)
-            return Sourcefile(path: fileUrl.standardizedFileURL.path, name: fileUrl.lastPathComponent, data: data, filetype: filetype)
+            let filetype = FileType(fileExtension: fileUrl.pathExtension)
+            return SourceFile(path: fileUrl.standardizedFileURL.path, name: fileUrl.lastPathComponent, data: data, filetype: filetype)
         }
     }
 }
@@ -212,27 +211,23 @@ extension LocoDataBuilder {
 extension LocoDataBuilder {
 
 	func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: [])
-        else { return "" }
+		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: []) else { return "" }
 
     	return regex.matches(
           in: path,
           options: [],
           range: NSRange(location: 0, length: path.count)
         ).compactMap { match in
-			guard let range = Range(match.range(at: 1), in: path)
-            else { return nil }
-
+			guard let range = Range(match.range(at: 1), in: path) else { return nil }
             return String(path[range])
 		}.first ?? ""
 	}
 
-	func gatherFrom(regex pattern: RegexPattern, sourcefile: Sourcefile) -> IO<[SourceValues]> {
+	func gatherFrom(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines])
-			else { return [] }
+            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines]) else { return [] }
 
-			let data = String(sourcefile.data)
+			let data = String(sourceFile.data)
 			let result: [SourceValues] = regex.matches(
 				in: data,
 				options: [],
