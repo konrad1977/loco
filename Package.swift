@@ -17,6 +17,10 @@ let package = Package(
   targets: [
     .executableTarget(
       name: "Loco",
-      dependencies: ["Funswift"])
+      dependencies: ["Funswift"]),
+    .testTarget(
+      name: "LocoTests",
+      dependencies: ["Loco"]
+    )
   ]
 )

@@ -136,43 +136,6 @@ extension LocoDataBuilder {
         }
     }
 
-	private func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: [])
-        else { return "" }
-
-		let range = NSRange(path.startIndex..<path.endIndex, in: path)
-    	return regex.matches(in: path, options: [], range: range).map { match in
-			guard let range = Range(match.range(at: 1), in: path)
-            else { return "" }
-
-            return String(path[range])
-		}.first ?? ""
-	}
-
-	private func gatherFrom(regex pattern: RegexPattern, sourcefile: Sourcefile) -> IO<[SourceValues]> {
-        IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines])
-			else { return [] }
-
-			let data = String(sourcefile.data)
-			let result: [SourceValues] = regex.matches(
-				in: data,
-				options: [],
-				range: NSRange(location: 0, length: data.count)
-			)
-			.map { match in
-				let matches: [String] = (1..<match.numberOfRanges).compactMap { rangeIndex in 
-					guard let range = Range(match.range(at: rangeIndex), in: data)
-                    else { return nil }
-					return String(data[range])
-				}
-				let lineNumber = data.countLines(upTo: match.range(at: 0))
-				return SourceValues(lineNumber: lineNumber, keys: matches)
-			}
-			return result
-		}
-	}
-
 	private func gatherLocalizedData(_ pattern: RegexPattern) -> (Sourcefile) -> IO<LocalizeableData> {
 		return { sourcefile in
 			IO {
@@ -244,4 +207,47 @@ extension LocoDataBuilder {
             return Sourcefile(path: fileUrl.standardizedFileURL.path, name: fileUrl.lastPathComponent, data: data, filetype: filetype)
         }
     }
+}
+
+extension LocoDataBuilder {
+
+	func fetchLocaleData(_ path: String) -> String {
+		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: [])
+        else { return "" }
+
+    	return regex.matches(
+          in: path,
+          options: [],
+          range: NSRange(location: 0, length: path.count)
+        ).compactMap { match in
+			guard let range = Range(match.range(at: 1), in: path)
+            else { return nil }
+
+            return String(path[range])
+		}.first ?? ""
+	}
+
+	func gatherFrom(regex pattern: RegexPattern, sourcefile: Sourcefile) -> IO<[SourceValues]> {
+        IO {
+            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines])
+			else { return [] }
+
+			let data = String(sourcefile.data)
+			let result: [SourceValues] = regex.matches(
+				in: data,
+				options: [],
+				range: NSRange(location: 0, length: data.count)
+			)
+			.map { match in
+				let matches: [String] = (1..<match.numberOfRanges).compactMap { rangeIndex in 
+					guard let range = Range(match.range(at: rangeIndex), in: data)
+                    else { return nil }
+					return String(data[range])
+				}
+				let lineNumber = data.countLines(upTo: match.range(at: 0))
+				return SourceValues(lineNumber: lineNumber, keys: matches)
+			}
+			return result
+		}
+	}
 }
