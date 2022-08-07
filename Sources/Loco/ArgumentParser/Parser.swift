@@ -1,7 +1,3 @@
-// 
-// ArgumentParser 
-//
-
 import Foundation
 
 struct Parser {
@@ -17,48 +13,31 @@ extension Parser {
     }
 
 	func value() -> String? {
-		let (first, _) = findArgumentIndicies(for: keyword, in: args)
+        let (first, _) = findArgumentIndicies(for: keyword, in: args)
 
-		guard let first = first, first < args.count
-		else { return nil }
+        guard let first = first, first < args.endIndex else { return nil }
 
-		return args[first + 1]
+        return args[first + 1]
 	}
 
     func parse() -> [String] {
         let (first, last) = findArgumentIndicies(for: keyword, in: args)
 
-        guard let first = first
-        else { return [] }
+        guard let first = first else { return [] }
 
-        guard let lastIndex = last 
-        else {
-            return Array(args.dropFirst(first + 1))
-              .map { $0.lowercased() }
-        }
-        return Array(args[first + 1 ..< lastIndex])
-            .map { $0.lowercased() }
+        guard let lastIndex = last else { return Array(args.dropFirst(first + 1)) }
+
+        return Array(args[first + 1..<lastIndex])
     }
-
-    func parse<B>(default: B, _ f: @escaping ([String]) -> B) -> B {
-        let result = parse()
-
-        guard result.isEmpty == false
-        else { return `default` }
-        return f(result)
-    }
-}
-
-extension Parser {
 
     private func findArgumentIndicies(for argv: String, in args: [String]) -> (first: Int?, last: Int?) {
-        if let first = args.firstIndex(of: argv) {
-            let copy = args.dropFirst(first)
-			if let next = copy.firstIndex(where: { $0 != argv && ($0.hasPrefix("--") || $0.hasPrefix("-")) }) {
-                return (first, next)
-            }
-            return (first, nil)
-        }
-        return (nil, nil)
+        guard let firstArg = args.firstIndex(of: argv) else { return (nil, nil) }
+
+        let nextArgs = args.dropFirst(firstArg).map { $0.lowercased() }
+
+        guard let next = nextArgs.firstIndex(where: { $0 != argv && ($0.hasPrefix("--") || $0.hasPrefix("-")) }) else { return (firstArg, nil) }
+
+        return (firstArg, next)
     }
+
 }

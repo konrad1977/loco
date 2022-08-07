@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Mikael Konradsson on 2022-08-05.
-//
-
 import Foundation
 
 struct SourceValues {

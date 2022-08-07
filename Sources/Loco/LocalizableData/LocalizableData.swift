@@ -1,13 +1,6 @@
-//
-//  File.swift
-//  
-//
-//  Created by Mikael Konradsson on 2022-07-15.
-//
-
 import Foundation
 
-public struct LocalizeEntry {
+struct LocalizeEntry {
     let path: String
 	let key: String
 	var data: String?
@@ -32,21 +25,21 @@ extension LocalizeEntry: CustomStringConvertible {
     }
 }
 
-public struct LocalizeableData {
-    public let path: String
-    public let filename: String
-    public let filetype: Filetype
-    public let data: [LocalizeEntry]
-    public var locale: String?
+struct LocalizableData {
+    let path: String
+    let filename: String
+    let filetype: FileType
+    let data: [LocalizeEntry]
+    var locale: String?
 }
 
-extension LocalizeableData {
+extension LocalizableData {
     var pathComponents: [String] {
         return URL(fileURLWithPath: path).pathComponents
     }
 
-    func replaceLanguage(with lang: String) -> String {
-        let cpy = pathComponents
-        return pathComponents.dropLast(2).joined(separator: "/") + "/" + lang + ".lproj/" + cpy.last!
+    func replaceLanguage(with lang: String) -> String? {
+        guard let cpy = pathComponents.last else { return nil }
+        return pathComponents.dropLast(2).joined(separator: "/") + "/" + lang + ".lproj/" + cpy
     }
 }
