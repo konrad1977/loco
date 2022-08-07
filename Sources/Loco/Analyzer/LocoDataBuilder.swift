@@ -22,7 +22,7 @@ extension LocoDataBuilder {
             IO.pure(startPath)
                 .flatMap(
                     supportedFiletypes(.localizable, filter: filter)
-                    >=> buildLocalizeablePaths
+                    >=> buildLocalizablePaths
                     >=> fetchLocalizationLanguage
                     >=> buildLocalizationGroups
             ),
@@ -48,7 +48,7 @@ extension LocoDataBuilder {
 			IO.pure(findProjectRoot(filePath: file).unsafeRun())
 				.flatMap(
 					supportedFiletypes(.localizable, filter: filter)
-					>=> buildLocalizeablePaths
+					>=> buildLocalizablePaths
 					>=> fetchLocalizationLanguage
 					>=> buildLocalizationGroups
 				),
@@ -88,7 +88,7 @@ extension LocoDataBuilder {
 		IO { paths.map(createFileInfo >=> gatherLocalizedErrors(.missingSemicolon) >>> LocoDataBuilder.run) }
 	}
 
-    private func buildLocalizeablePaths(_ paths: [String]) -> IO<[LocalizableData]> {
+    private func buildLocalizablePaths(_ paths: [String]) -> IO<[LocalizableData]> {
         IO { paths.map(createFileInfo >=> gatherLocalizedData(.extractKeyAndValue) >>> LocoDataBuilder.run) }
     }
 
