@@ -155,20 +155,18 @@ extension LocoDataBuilder {
 			else { return [] }
 
 			let data = String(sourcefile.data)
-
 			let result: [SourceValues] = regex.matches(
 				in: data,
 				options: [],
 				range: NSRange(location: 0, length: data.count)
 			)
 			.map { match in
-				let lineNumber = data.countLines(upTo: match.range(at: 0))
-				var matches: [String] = []
-				for rangeIndex in 1..<match.numberOfRanges {
-					if let range = Range(match.range(at: rangeIndex), in: data) {
-						matches.append(String(data[range]))
-					}
+				let matches: [String] = (1..<match.numberOfRanges).compactMap { rangeIndex in 
+					guard let range = Range(match.range(at: rangeIndex), in: data)
+                    else { return nil }
+					return String(data[range])
 				}
+				let lineNumber = data.countLines(upTo: match.range(at: 0))
 				return SourceValues(lineNumber: lineNumber, keys: matches)
 			}
 			return result
