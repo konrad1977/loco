@@ -3,12 +3,8 @@ import XCTest
 
 class RegexBuilderTesst: XCTestCase {
 
-    func buildSourceRegex(_ list: [String]) -> String {
-        return #"[^\w?]("# + list.joined(separator: "\\(|") + #")\s*?(\".*?\")"#
-    }
-
     func testBuildRegex() {
-        let result = buildSourceRegex([
+        let result = RegexPattern.buildSourceRegex([
                                         "\\.navigationTitle",
                                         "Label",
                                         "Text",
@@ -17,8 +13,6 @@ class RegexBuilderTesst: XCTestCase {
                                       ]
         )
         let expected = #"[^\w?](\.navigationTitle\(|Label\(|Text\(|NSLocalizedString\(|String\(localized:)\s*?(\".*?\")"#
-        print(result)
-        print(expected)
         XCTAssertEqual(result, expected)
     }
 }
