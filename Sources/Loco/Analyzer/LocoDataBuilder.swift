@@ -3,9 +3,9 @@ import Funswift
 
 enum RegexPattern: String {
     case extractKeyAndValue = #"^(\"[^\"]+\")\s?=\s?(\"[^\"]*?\")"#
-    case querySourceCode = #"([^\w?]Text\(|[^\w?]NSLocalizedString\(\s*?|String\(localized:\s?)(\".*?\")"#
-    case extractLocaleFromPath = #"(\w{2}-\w{2})\.lproj"#
-	case missingSemicolon = #"(^\"(?:(?!;).)*$)"#
+    case querySourceCode = #"[^\w?](\.navigationTitle\(|Label\(|Text\(|NSLocalizedString\(|String\(localized:)\s*?(\".*?\")"#
+    case extractLocaleFromPath = #"(\w{2}-\w{2}|\w{2})\.lproj"#
+	case missingSemicolon = #"(^\"(?:(?!;|\\).)*$)"#
 }
 
 struct LocoDataBuilder {

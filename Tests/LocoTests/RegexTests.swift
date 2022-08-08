@@ -18,10 +18,13 @@ class RegexTests: XCTestCase {
 
     func testSourceFile() {
         let data = """
-          NSLocalizedString("Something", comment: "A comment")
-          Text("SomeText")
-          Label("Someother Text")
-          String(localized: "More text")
+          NSLocalizedString(
+            "NSLocalizedString", comment: "A comment"
+          )
+          Text("Text")
+          Label("Label")
+          String(localized:
+           "String.Localalized")
         """
 
         let sourcefile = SourceFile(
@@ -32,13 +35,15 @@ class RegexTests: XCTestCase {
         )
         
         let result = builder.gatherFrom(regex: .querySourceCode, sourceFile: sourcefile).unsafeRun()
-        XCTAssertEqual(result.count, 3)
+        XCTAssertEqual(result.count, 4)
         XCTAssertEqual(result[0].lineNumber, 1)
-        XCTAssertEqual(result[1].lineNumber, 2)
-        XCTAssertEqual(result[2].lineNumber, 4)
+        XCTAssertEqual(result[1].lineNumber, 4)
+        XCTAssertEqual(result[2].lineNumber, 5)
+        XCTAssertEqual(result[3].lineNumber, 6)
 
-        XCTAssertEqual(result[0].keys[1], "\"Something\"")
-        XCTAssertEqual(result[1].keys[1], "\"SomeText\"")
-        XCTAssertEqual(result[2].keys[1], "\"More text\"")
+        XCTAssertEqual(result[0].keys[1], "\"NSLocalizedString\"")
+        XCTAssertEqual(result[1].keys[1], "\"Text\"")
+        XCTAssertEqual(result[2].keys[1], "\"Label\"")
+        XCTAssertEqual(result[3].keys[1], "\"String.Localalized\"")
     }
 }
