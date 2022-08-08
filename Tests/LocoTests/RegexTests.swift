@@ -34,7 +34,11 @@ class RegexTests: XCTestCase {
           filetype: .swift
         )
         
-        let result = builder.gatherFrom(regex: .querySourceCode, sourceFile: sourcefile).unsafeRun()
+        let result = builder.exctractUsing(
+            regex: .querySourceCode(regex: RegexPattern.sourceRegex), 
+            sourceFile: sourcefile
+        ).unsafeRun()
+        
         XCTAssertEqual(result.count, 4)
         XCTAssertEqual(result[0].lineNumber, 1)
         XCTAssertEqual(result[1].lineNumber, 4)

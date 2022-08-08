@@ -1,18 +1,7 @@
 import Foundation
 import Funswift
 
-enum RegexPattern: String {
-    case extractKeyAndValue = #"^(\"[^\"]+\")\s?=\s?(\"[^\"]*?\")"#
-    case querySourceCode = #"[^\w?](\.navigationTitle\(|Label\(|Text\(|NSLocalizedString\(|String\(localized:)\s*?(\".*?\")"#
-    case extractLocaleFromPath = #"(\w{2}-\w{2}|\w{2})\.lproj"#
-	case missingSemicolon = #"(^\"(?:(?!;|\\).)*$)"#
-}
-
 struct LocoDataBuilder {
-    init() {}
-}
-
-extension LocoDataBuilder {
 
     func sourceFiles(
         from startPath: String,
@@ -93,7 +82,7 @@ extension LocoDataBuilder {
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizableData]> {
-        IO { paths.map(createFileInfo >=> gatherSourceFileData(.querySourceCode) >>> LocoDataBuilder.run) }
+        IO { paths.map(createFileInfo >=> gatherSourceFileData(.querySourceCode(regex: RegexPattern.sourceRegex)) >>> LocoDataBuilder.run) }
     }
 
     private func flattenSourceData(_ files: [LocalizableData]) -> IO<[LocalizableData]> {
@@ -139,7 +128,7 @@ extension LocoDataBuilder {
 	private func gatherLocalizedData(_ pattern: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
 		return { sourceFile in
 			IO {
-				let entries = gatherFrom(regex: pattern, sourceFile: sourceFile)
+				let entries = exctractUsing(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
                         LocalizeEntry(path: sourceFile.path, key: $0.keys.first ?? "", data: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 					}
@@ -152,7 +141,7 @@ extension LocoDataBuilder {
     private func gatherSourceFileData(_ pattern: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
         return { sourceFile in
             IO {
-				let entries = gatherFrom(regex: pattern, sourceFile: sourceFile)
+				let entries = exctractUsing(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
 							LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
 						}
@@ -166,7 +155,7 @@ extension LocoDataBuilder {
 	private func gatherLocalizedErrors(_ pattern: RegexPattern) -> (SourceFile) -> IO<[LocalizationError]> {
 		return { sourceFile in
 			IO {
-                return gatherFrom(regex: pattern, sourceFile: sourceFile)
+                return exctractUsing(regex: pattern, sourceFile: sourceFile)
 					.map { values in values.map {
 						.missingSemicolon(path: sourceFile.path, lineNumber: $0.lineNumber)
 					}
@@ -212,27 +201,28 @@ extension LocoDataBuilder {
 extension LocoDataBuilder {
 
 	func fetchLocaleData(_ path: String) -> String {
-		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.rawValue, options: []) 
+		guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.regex, options: []) 
         else { return "" }
 
     	return regex.matches(
           in: path,
           options: [],
           range: NSRange(location: 0, length: path.count)
-        ).compactMap { match in
+        )
+        .compactMap { match in
 			guard let range = Range(match.range(at: 1), in: path) 
             else { return nil }
             return String(path[range])
 		}.first ?? ""
 	}
 
-	func gatherFrom(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
+	func exctractUsing(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.rawValue, options: [.anchorsMatchLines]) 
+            guard let regex = try? NSRegularExpression(pattern: pattern.regex, options: [.anchorsMatchLines]) 
             else { return [] }
 
 			let data = String(sourceFile.data)
-			let result: [SourceValues] = regex.matches(
+			let matches: [SourceValues] = regex.matches(
 				in: data,
 				options: [],
 				range: NSRange(location: 0, length: data.count)
@@ -246,7 +236,7 @@ extension LocoDataBuilder {
 				let lineNumber = data.countLines(upTo: match.range(at: 0))
 				return SourceValues(lineNumber: lineNumber, keys: matches)
 			}
-			return result
+			return matches
 		}
 	}
 }
