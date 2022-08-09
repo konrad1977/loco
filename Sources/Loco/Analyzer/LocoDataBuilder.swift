@@ -118,7 +118,7 @@ extension LocoDataBuilder {
             }.filter { $0.filename.contains("InfoPlist") == false }
 
             return Dictionary(grouping: sorted) { item in
-                "\(item.filename)" + (item.pathComponents.dropLast(2).last ?? "")
+                item.filename + item.pathComponents.dropLast(2).joined()
             }.map { (_, value: [LocalizableData]) in
                 LocalizationGroup(files: value)
             }
