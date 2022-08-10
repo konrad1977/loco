@@ -35,9 +35,9 @@ extension LocoAnalyzer {
                 checkMissingTranslationFiles(for: groups)
             ).unsafeRun()
 
+			warnings.append(contentsOf: missing)
 			warnings.append(contentsOf: empty)
 			warnings.append(contentsOf: unused)
-			warnings.append(contentsOf: missing)
 			warnings.append(contentsOf: missingFiles)
 
             let files = groups.flatMap { $0.files }
