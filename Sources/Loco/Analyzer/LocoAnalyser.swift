@@ -23,7 +23,8 @@ extension LocoAnalyzer {
 			}
 			
             let allLocalizations = allLocalizations(from: groups).unsafeRun()
-            let unusedTranslationKeys = allLocalizations.filter { loc in inCode.flatMap { $0.data }.contains(loc) == false }
+            let mergedKeys = inCode.flatMap { $0.data + $0.restData }
+            let unusedTranslationKeys = allLocalizations.filter { loc in mergedKeys.contains(loc) == false }
             let untranslated = inCode.filter { $0.data.filter { allLocalizations.contains($0) }.isEmpty }
 
             var warnings: [LocalizationError] = []

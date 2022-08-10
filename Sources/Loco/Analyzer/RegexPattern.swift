@@ -5,6 +5,7 @@ enum RegexPattern {
     case querySourceCode(regex: String)
     case extractLocaleFromPath
 	case missingSemicolon
+    case allStrings
 }
 
 extension RegexPattern {
@@ -18,6 +19,8 @@ extension RegexPattern {
             return #"(\w{2}-\w{2}|\w{2})\.lproj"#
         case .missingSemicolon:
             return #"(^\"(?:(?!;|\\).)*$)"#
+        case .allStrings:
+            return #"(\".+\")"#
         }
     }
 }

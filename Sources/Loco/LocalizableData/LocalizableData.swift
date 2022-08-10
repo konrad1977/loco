@@ -30,6 +30,7 @@ struct LocalizableData {
     let filename: String
     let filetype: FileType
     let data: [LocalizeEntry]
+    var restData: [LocalizeEntry] = []
     var locale: String?
 }
 
