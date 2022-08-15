@@ -7,7 +7,7 @@ Loco is an extremly fast CLI linter for Localization.strings and swift files.
 
 ### What does it check?
 - Semicolons
-- Untranslated strings in your swift files
+- *Untranslated* strings in your swift files
 - Empty values
 - Duplicate keys
 - Unused keys
@@ -15,14 +15,15 @@ Loco is an extremly fast CLI linter for Localization.strings and swift files.
 - Missing a translation file for a whole language
 
 #### Output format
-- Loco will output its result in a compiler error log format so it can easily be integrated in third party apps (like Emacs, VI)
+- Loco will output its result in a compiler error log format so it can easily be integrated in third party apps (like Xcode, Emacs, Vim)
 
 ##### Limitation
-- Quick and dirty (alot of imperative coding mixed with tons of functional. Sorry purists)
+- Loco builds two separate sets of data for each source file, one is for known localization pattern, such as NSLocalizedString, etc. The other one is for all the strings. Loco will then check if any of those are in a .strings file for silent warnings about unused translation keys. But it wont discover if a such key is untranslated. 
 - Does not lint Localization.dict
 - Does not lint Storyboards
-- Will have false positive and its untested
-- No unit tests (probably next task)
+- Will have false positive / true negatives
+- Needs a bit code clean up. (imperative coding mixed with tons of functional. Sorry purists)
+- Only some unit tests (more will come)
 
 #### Installation
 Compile the project using terminal (or Xcode)
