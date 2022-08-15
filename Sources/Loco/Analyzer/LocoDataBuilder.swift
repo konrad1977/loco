@@ -180,9 +180,9 @@ extension LocoDataBuilder {
         }
     }
 
-    private func fileData(from path: String) -> IO<String.SubSequence> {
+    private func fileData(from path: String) -> IO<String> {
         IO { 
-            guard let file = try? String(contentsOfFile: path, encoding: .ascii)[...] 
+            guard let file = try? String(contentsOfFile: path, encoding: .utf8)
             else { return "" }
             return file 
         }
@@ -196,7 +196,6 @@ extension LocoDataBuilder {
         }
     }
 }
-
 
 extension LocoDataBuilder {
 
@@ -218,10 +217,10 @@ extension LocoDataBuilder {
 
     func exctractUsing(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.regex, options: [.anchorsMatchLines]) 
+            guard let regex = try? NSRegularExpression(pattern: pattern.regex, options: [.anchorsMatchLines, .allowCommentsAndWhitespace]) 
             else { return [] }
 
-            let data = String(sourceFile.data)
+            let data = sourceFile.data
             let matches: [SourceValues] = regex.matches(
               in: data,
               options: [],

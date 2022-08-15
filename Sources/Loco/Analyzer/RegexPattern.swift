@@ -18,7 +18,7 @@ extension RegexPattern {
         case .extractLocaleFromPath:
             return #"(\w{2}-\w{2}|\w{2})\.lproj"#
         case .missingSemicolon:
-            return #"(^\"(?:(?!;|\\).)*$)"#
+            return #"(^\"(?:.(?!;|\\))*$)"#
         case .allStrings:
             return #"(\".+\")"#
         }
