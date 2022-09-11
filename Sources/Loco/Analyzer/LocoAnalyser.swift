@@ -16,10 +16,10 @@ extension LocoAnalyzer {
 
 	private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizableData], _ compileErrors: [LocalizationError]) -> IO<Void> {
         IO {
-			let disableColoredOutput = Parser(keyword: "--no-color", args: args).hasArgument()
+			let coloredOutput = Parser(keyword: "--color", args: args).hasArgument()
 
 			compileErrors.forEach { error in
-				print(disableColoredOutput ? error : error.coloredDescription)
+				print(coloredOutput ? error.coloredDescription : error)
 			}
 			
             let allLocalizations = allLocalizations(from: groups).unsafeRun()
@@ -50,13 +50,21 @@ extension LocoAnalyzer {
             }
 
 			warnings.forEach { error in
-                print(disableColoredOutput ? error : error.coloredDescription)
+                print(coloredOutput ? error.coloredDescription : error)
             }
 
 			if compileErrors.isEmpty == false {
-				print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
+                if coloredOutput {
+				    print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
+                } else {
+				    print("Found " + "\(compileErrors.count)" + " errors.")
+                }
 			}
-            print("Found " + "\(warnings.count)".textColor(.warningColor) + " issues.")
+            if coloredOutput {
+                print("Found " + "\(warnings.count)".textColor(.warningColor) + " issues.")
+            } else {
+                print("Found " + "\(warnings.count)" + " issues.")
+            }
         }
     }
 
