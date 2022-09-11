@@ -51,7 +51,7 @@ Copy the loco binary from either .build/release or .build/debug to
 In build phases. Add run script (+)
 ```shell
 if which loco > /dev/null; then
-	loco --no-color
+	loco
 else 
 	echo "warning: Loco is not installed. Compile from https://github.com/konrad1977/loco"
 fi
@@ -72,9 +72,9 @@ Lint individual swift files (check for missing translations only)
 $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 ```
 
-Disable colored output
+Enable colored output
 ```shell
-$ loco --no-color
+$ loco --color
 ```
 
 !["Example"](https://github.com/konrad1977/loco/blob/main/images/example.png)
