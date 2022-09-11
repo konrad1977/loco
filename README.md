@@ -56,7 +56,6 @@ else
 	echo "warning: Loco is not installed. Compile from https://github.com/konrad1977/loco"
 fi
 ```
-!["XcodeSetup"](https://github.com/konrad1977/loco/blob/main/images/xcode-setup.png)
 
 *Make sure you run loco before compile sources to get info where you are missing a semicolon*
 
@@ -76,6 +75,8 @@ Enable colored output
 ```shell
 $ loco --color
 ```
-
-!["Example"](https://github.com/konrad1977/loco/blob/main/images/example.png)
+With color
 !["Example2"](https://github.com/konrad1977/loco/blob/main/images/example2.png)
+
+Without color
+!["Example"](https://github.com/konrad1977/loco/blob/main/images/example.png)
