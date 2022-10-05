@@ -3,6 +3,7 @@ import Funswift
 
 struct LocoDataBuilder {
 
+    // swiftlint:disable large_tuple
     func sourceFiles(
       from startPath: String,
       filter: PathFilter = .custom(["Build"])
@@ -30,6 +31,7 @@ struct LocoDataBuilder {
         )
     }
 
+    // swiftlint:disable large_tuple
     func buildData(for file: String,
                    filter: PathFilter = .custom(["Build"])
     ) -> IO<([LocalizationGroup], [LocalizableData], [LocalizationError])> {
@@ -139,7 +141,7 @@ extension LocoDataBuilder {
     private func gatherSourceFileData(_ pattern: RegexPattern, allStringsRegex: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
         return { sourceFile in
             IO {
-                
+
                 let keyEntries = exctractUsing(regex: pattern, sourceFile: sourceFile)
                   .map { values in values.map { LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber) } }
                   .unsafeRun()
@@ -148,7 +150,7 @@ extension LocoDataBuilder {
                   .map { values in values.map { LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber) } }
                   .unsafeRun()
                   .filter { keyEntries.contains($0) == false }
-                
+
                 return LocalizableData(path: sourceFile.path, filename: sourceFile.name, filetype: sourceFile.filetype, data: keyEntries, restData: restKeys)
             }
         }
@@ -181,10 +183,10 @@ extension LocoDataBuilder {
     }
 
     private func fileData(from path: String) -> IO<String> {
-        IO { 
+        IO {
             guard let file = try? String(contentsOfFile: path, encoding: .utf8)
             else { return "" }
-            return file 
+            return file
         }
     }
 
@@ -200,7 +202,7 @@ extension LocoDataBuilder {
 extension LocoDataBuilder {
 
     func fetchLocaleData(_ path: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.regex, options: []) 
+        guard let regex = try? NSRegularExpression(pattern: RegexPattern.extractLocaleFromPath.regex, options: [])
         else { return "" }
 
         return regex.matches(
@@ -209,7 +211,7 @@ extension LocoDataBuilder {
           range: NSRange(location: 0, length: path.count)
         )
           .compactMap { match in
-              guard let range = Range(match.range(at: 1), in: path) 
+              guard let range = Range(match.range(at: 1), in: path)
               else { return nil }
               return String(path[range])
           }.first ?? ""
@@ -217,7 +219,7 @@ extension LocoDataBuilder {
 
     func exctractUsing(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
-            guard let regex = try? NSRegularExpression(pattern: pattern.regex, options: [.anchorsMatchLines, .allowCommentsAndWhitespace]) 
+            guard let regex = try? NSRegularExpression(pattern: pattern.regex, options: [.anchorsMatchLines, .allowCommentsAndWhitespace])
             else { return [] }
 
             let data = sourceFile.data
@@ -227,7 +229,7 @@ extension LocoDataBuilder {
               range: NSRange(location: 0, length: data.count)
             )
               .map { match in
-                  let matches: [String] = (1..<match.numberOfRanges).compactMap { rangeIndex in 
+                  let matches: [String] = (1..<match.numberOfRanges).compactMap { rangeIndex in
                       guard let range = Range(match.range(at: rangeIndex), in: data)
                       else { return nil }
                       return String(data[range])

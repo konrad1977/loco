@@ -16,4 +16,3 @@ class RegexBuilderTesst: XCTestCase {
         XCTAssertEqual(result, expected)
     }
 }
-

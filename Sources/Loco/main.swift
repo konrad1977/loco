@@ -32,7 +32,7 @@ private func lintFile(file: String, args: [String]) {
             LocoDataBuilder()
             .buildData(for: file)
         )
-    } 
+    }
     .flatMap(Rounding.decimals(2) >=> printTime)
     .unsafeRun()
 }

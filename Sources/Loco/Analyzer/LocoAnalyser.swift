@@ -3,6 +3,8 @@ import Funswift
 
 struct LocoAnalyzer {
     let args: [String]
+
+    // swiftlint:disable large_tuple
     func analyze(io: IO<([LocalizationGroup], [LocalizableData], [LocalizationError])>) -> IO<Void> {
         io.flatMap(handleLocalizations)
     }
@@ -14,14 +16,14 @@ struct LocoAnalyzer {
 
 extension LocoAnalyzer {
 
-	private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizableData], _ compileErrors: [LocalizationError]) -> IO<Void> {
+    private func handleLocalizations(_ groups: [LocalizationGroup], _ inCode: [LocalizableData], _ compileErrors: [LocalizationError]) -> IO<Void> {
         IO {
-			let coloredOutput = Parser(keyword: "--color", args: args).hasArgument()
+            let coloredOutput = Parser(keyword: "--color", args: args).hasArgument()
 
-			compileErrors.forEach { error in
-				print(coloredOutput ? error.coloredDescription : error)
-			}
-			
+            compileErrors.forEach { error in
+                print(coloredOutput ? error.coloredDescription : error)
+            }
+
             let allLocalizations = allLocalizations(from: groups).unsafeRun()
             let mergedKeys = inCode.flatMap { $0.data + $0.restData }
             let unusedTranslationKeys = allLocalizations.filter { loc in mergedKeys.contains(loc) == false }
@@ -29,37 +31,37 @@ extension LocoAnalyzer {
 
             var warnings: [LocalizationError] = []
             let (empty, unused, missing, missingFiles) = zip(
-				checkEmptyValues(from: allLocalizations),
+                checkEmptyValues(from: allLocalizations),
                 checkUnusedTranslations(unusedTranslationKeys),
                 checkMissingTranslations(untranslated),
                 checkMissingTranslationFiles(for: groups)
             ).unsafeRun()
 
-			warnings.append(contentsOf: missing)
-			warnings.append(contentsOf: empty)
-			warnings.append(contentsOf: unused)
-			warnings.append(contentsOf: missingFiles)
+            warnings.append(contentsOf: missing)
+            warnings.append(contentsOf: empty)
+            warnings.append(contentsOf: unused)
+            warnings.append(contentsOf: missingFiles)
 
             let files = groups.flatMap { $0.files }
             files.forEach {
-				warnings.append(contentsOf: checkForDuplicateKeys($0).unsafeRun())
+                warnings.append(contentsOf: checkForDuplicateKeys($0).unsafeRun())
             }
 
             groups.forEach { group in
-				warnings.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
+                warnings.append(contentsOf: detectMissingKeysIn(group: group).unsafeRun())
             }
 
-			warnings.forEach { error in
+            warnings.forEach { error in
                 print(coloredOutput ? error.coloredDescription : error)
             }
 
-			if compileErrors.isEmpty == false {
+            if compileErrors.isEmpty == false {
                 if coloredOutput {
-				    print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
+                    print("Found " + "\(compileErrors.count)".textColor(.errorColor) + " errors.")
                 } else {
-				    print("Found " + "\(compileErrors.count)" + " errors.")
+                    print("Found " + "\(compileErrors.count)" + " errors.")
                 }
-			}
+            }
             if coloredOutput {
                 print("Found " + "\(warnings.count)".textColor(.warningColor) + " issues.")
             } else {
@@ -72,13 +74,13 @@ extension LocoAnalyzer {
         IO { groups.flatMap { $0.files }.flatMap { $0.data } }
     }
 
-	private func checkEmptyValues(from entries: [LocalizeEntry]) -> IO<[LocalizationError]> {
-		IO {
+    private func checkEmptyValues(from entries: [LocalizeEntry]) -> IO<[LocalizationError]> {
+        IO {
             entries
                 .filter { $0.data?.isEmpty == true || $0.data == "\"\"" }
                 .map { .emptyValue(key: $0.key, path: $0.path, lineNumber: $0.lineNumber) }
-		}
-	}
+        }
+    }
 
     private func checkForDuplicateKeys(_ group: LocalizableData) -> IO<[LocalizationError]> {
         IO {
@@ -89,7 +91,7 @@ extension LocoAnalyzer {
         }
     }
 
-    private func detectMissingKeysIn(group: LocalizationGroup) -> IO<[LocalizationError]>{
+    private func detectMissingKeysIn(group: LocalizationGroup) -> IO<[LocalizationError]> {
         IO {
             let allUniqueKeys = Set(group.files.flatMap { $0.data })
             var errors: [LocalizationError] = []

@@ -2,8 +2,8 @@ import Foundation
 
 struct LocalizeEntry {
     let path: String
-	let key: String
-	var data: String?
+    let key: String
+    var data: String?
     let lineNumber: Int
 }
 
@@ -40,7 +40,7 @@ extension LocalizableData {
     }
 
     func replaceLanguage(with lang: String) -> String? {
-        guard let cpy = pathComponents.last 
+        guard let cpy = pathComponents.last
         else { return nil }
         return pathComponents.dropLast(2).joined(separator: "/") + "/" + lang + ".lproj/" + cpy
     }

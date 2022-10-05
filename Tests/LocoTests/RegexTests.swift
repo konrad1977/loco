@@ -33,12 +33,12 @@ class RegexTests: XCTestCase {
           data: data[...],
           filetype: .swift
         )
-        
+
         let result = builder.exctractUsing(
-            regex: .querySourceCode(regex: RegexPattern.sourceRegex), 
+            regex: .querySourceCode(regex: RegexPattern.sourceRegex),
             sourceFile: sourcefile
         ).unsafeRun()
-        
+
         XCTAssertEqual(result.count, 4)
         XCTAssertEqual(result[0].lineNumber, 1)
         XCTAssertEqual(result[1].lineNumber, 4)
