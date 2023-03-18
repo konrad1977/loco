@@ -28,16 +28,17 @@ class RegexTests: XCTestCase {
         """
 
         let sourcefile = SourceFile(
-          path: "/mocked",
-          name: "File.swift",
-          data: data[...],
-          filetype: .swift
+            path: "/mocked",
+            name: "File.swift",
+            data: String(data[...]),
+            filetype: .swift
         )
 
         let result = builder.exctractUsing(
             regex: .querySourceCode(regex: RegexPattern.sourceRegex),
             sourceFile: sourcefile
-        ).unsafeRun()
+        )
+        .unsafeRun()
 
         XCTAssertEqual(result.count, 4)
         XCTAssertEqual(result[0].lineNumber, 1)

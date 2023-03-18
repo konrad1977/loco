@@ -84,7 +84,13 @@ extension LocoDataBuilder {
     }
 
     private func buildSourcePaths(_ paths: [String]) -> IO<[LocalizableData]> {
-        IO { paths.map(createFileInfo >=> gatherSourceFileData(.querySourceCode(regex: RegexPattern.sourceRegex), allStringsRegex: RegexPattern.allStrings) >>> LocoDataBuilder.run) }
+        IO { paths.map(
+            createFileInfo >=>
+            gatherSourceFileData(
+                .querySourceCode(regex: RegexPattern.sourceRegex),
+                allStringsRegex: RegexPattern.swiftgen
+            ) >>> LocoDataBuilder.run)
+        }
     }
 
     private func flattenSourceData(_ files: [LocalizableData]) -> IO<[LocalizableData]> {

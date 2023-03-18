@@ -6,6 +6,7 @@ enum RegexPattern {
     case extractLocaleFromPath
 	case missingSemicolon
     case allStrings
+    case swiftgen
 }
 
 extension RegexPattern {
@@ -21,11 +22,14 @@ extension RegexPattern {
             return #"(^\"(?:.(?!;|\\))*$)"#
         case .allStrings:
             return #"(\".+\")"#
+        case .swiftgen:
+            return #"\.tr\(\"\w+\"\,\W?(\"\S+\")"#
         }
     }
 }
 
 extension RegexPattern {
+    
     static func buildSourceRegex(_ list: [String]) -> String {
         #"[^\w?]("# + list.joined(separator: "\\(|") + #")\s*?(\".*?\")"#
     }
@@ -41,7 +45,7 @@ extension RegexPattern {
             "Toggle",
             "LocalizedStringKey",
             "NSLocalizedString",
-            "String\\(localized:"
+            "String\\(localized:",
           ]
         )
     }
