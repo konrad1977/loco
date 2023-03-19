@@ -1,13 +1,35 @@
 import XCTest
-@testable import Loco
+@testable import loco
 
 class RegexTests: XCTestCase {
 
     var builder: LocoDataBuilder!
+    var sourcefile: SourceFile!
 
     override func setUp() {
         super.setUp()
         builder = LocoDataBuilder()
+        setupData()
+    }
+    
+    private func setupData() {
+        let data = """
+          NSLocalizedString(
+            "NSLocalizedString", comment: "A comment"
+          )
+          Text("Text")
+          Label("Label")
+          String(localized:
+           "String.Localalized")
+        let name = L10n.tr("Localization", "Part.name", fallback: "This is a fallback")
+        """
+        
+        sourcefile = SourceFile(
+            path: "/mocked",
+            name: "File.swift",
+            data: String(data[...]),
+            filetype: .swift
+        )
     }
 
     func testParseLocalePathData() {
@@ -17,23 +39,6 @@ class RegexTests: XCTestCase {
     }
 
     func testSourceFile() {
-        let data = """
-          NSLocalizedString(
-            "NSLocalizedString", comment: "A comment"
-          )
-          Text("Text")
-          Label("Label")
-          String(localized:
-           "String.Localalized")
-        """
-
-        let sourcefile = SourceFile(
-            path: "/mocked",
-            name: "File.swift",
-            data: String(data[...]),
-            filetype: .swift
-        )
-
         let result = builder.exctractUsing(
             regex: .querySourceCode(regex: RegexPattern.sourceRegex),
             sourceFile: sourcefile
@@ -50,5 +55,12 @@ class RegexTests: XCTestCase {
         XCTAssertEqual(result[1].keys[1], "\"Text\"")
         XCTAssertEqual(result[2].keys[1], "\"Label\"")
         XCTAssertEqual(result[3].keys[1], "\"String.Localalized\"")
+    }
+    
+    func testSwiftGenData() {
+        let result = builder.exctractUsing(regex: .swiftgen, sourceFile: sourcefile).unsafeRun()
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].lineNumber, 8)
+        XCTAssertEqual(result[0].keys[0], "\"Part.name\"")
     }
 }

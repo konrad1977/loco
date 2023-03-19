@@ -1,26 +1,27 @@
-// swift-tools-version:5.5
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version:5.7
 
 import PackageDescription
 
 let package = Package(
-  name: "Loco",
+  name: "loco",
   platforms: [
-	.macOS(.v10_11)
+    .macOS(.v10_14)
   ],
   products: [
-    .executable(name: "loco", targets: ["Loco"])
+    .executable(name: "loco", targets: ["loco"])
   ],
   dependencies: [
-	.package(name: "Funswift", url: "https://github.com/konrad1977/funswift", .branch("main"))
+    .package(url: "https://github.com/konrad1977/funswift", branch: "main"),
   ],
   targets: [
     .executableTarget(
-      name: "Loco",
-      dependencies: ["Funswift"]),
+      name: "loco",
+      dependencies: [
+        .product(name: "Funswift", package: "funswift")
+      ]),
     .testTarget(
       name: "LocoTests",
-      dependencies: ["Loco"]
+      dependencies: ["loco"]
     )
   ]
 )

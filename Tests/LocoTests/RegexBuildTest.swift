@@ -1,4 +1,4 @@
-@testable import Loco
+@testable import loco
 import XCTest
 
 class RegexBuilderTesst: XCTestCase {
