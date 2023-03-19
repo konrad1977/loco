@@ -14,6 +14,12 @@ Loco is an extremly fast CLI linter for Localization.strings and swift files.
 - Missing keys in one or more languages
 - Missing a translation file for a whole language
 
+- **Works with swiftgen generated localizations**.
+
+### New features:
+- Doesnt lint empty strings inside normally checked objects.
+- It doesnt check commented out strings that normally would be checked (Single line comments.)
+
 #### Output format
 - Loco will output its result in a compiler error log format so it can easily be integrated in third party apps (like Xcode, Emacs, Vim)
 
