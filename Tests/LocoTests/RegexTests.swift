@@ -17,6 +17,7 @@ class RegexTests: XCTestCase {
           NSLocalizedString(
             "NSLocalizedString", comment: "A comment"
           )
+          Text("")
           Text("Text")
           Label("Label")
           String(localized:
@@ -49,9 +50,9 @@ class RegexTests: XCTestCase {
 
         XCTAssertEqual(result.count, 4)
         XCTAssertEqual(result[0].lineNumber, 1)
-        XCTAssertEqual(result[1].lineNumber, 4)
-        XCTAssertEqual(result[2].lineNumber, 5)
-        XCTAssertEqual(result[3].lineNumber, 6)
+        XCTAssertEqual(result[1].lineNumber, 5)
+        XCTAssertEqual(result[2].lineNumber, 6)
+        XCTAssertEqual(result[3].lineNumber, 7)
 
         XCTAssertEqual(result[0].keys[1], "\"NSLocalizedString\"")
         XCTAssertEqual(result[1].keys[1], "\"Text\"")
@@ -62,7 +63,7 @@ class RegexTests: XCTestCase {
     func testSwiftGenData() {
         let result = builder.exctractUsing(regex: .swiftgen, sourceFile: sourcefile).unsafeRun()
         XCTAssertEqual(result.count, 1)
-        XCTAssertEqual(result[0].lineNumber, 8)
+        XCTAssertEqual(result[0].lineNumber, 9)
         XCTAssertEqual(result[0].keys[0], "\"Part.name\"")
     }
 }

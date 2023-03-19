@@ -11,7 +11,7 @@ class RegexBuilderTesst: XCTestCase {
             "NSLocalizedString",
             "String\\(localized:"
         ])
-        let expected = #"[^\w?](\.navigationTitle\(|Label\(|Text\(|NSLocalizedString\(|String\(localized:)\s*?(\".*?\")"#
+        let expected = #"^[^\n\/]*(\.navigationTitle\(|Label\(|Text\(|NSLocalizedString\(|String\(localized:)\s*?(\"\S+\")"#
         XCTAssertEqual(result, expected)
     }
 }

@@ -21,7 +21,7 @@ extension RegexPattern {
         case .missingSemicolon:
             return #"(^\"(?:.(?!;|\\))*$)"#
         case .allStrings:
-            return #"(\".+\")"#
+            return #"(\"\.*\")"#
         case .swiftgen:
             return #"^[^\n\/]*\.tr\(\"\w+\"\,\W?(\"\S+\")"#
         }
@@ -31,7 +31,7 @@ extension RegexPattern {
 extension RegexPattern {
     
     static func buildSourceRegex(_ list: [String]) -> String {
-        #"^[^\n\/]*("# + list.joined(separator: "\\(|") + #")\s*?(\".*?\")"#
+        #"^[^\n\/]*("# + list.joined(separator: "\\(|") + #")\s*?("[^"\n]{1,}")"#
     }
 
     static var sourceRegex: String {
@@ -39,6 +39,7 @@ extension RegexPattern {
           [
             "\\.navigationTitle",
             "Label",
+            "DatePicker",
             "Text",
             "Picker",
             "Button",

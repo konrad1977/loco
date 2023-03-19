@@ -87,8 +87,11 @@ extension LocoDataBuilder {
         IO { paths.map(
             createFileInfo >=>
                 gatherSourceFileData(
-                    .querySourceCode(regex: RegexPattern.sourceRegex),
-                    allStringsRegex: RegexPattern.swiftgen
+                    [
+                        .querySourceCode(regex: RegexPattern.sourceRegex),
+                        RegexPattern.swiftgen
+                    ],
+                    allStringsRegex: RegexPattern.allStrings
                 ) >>> LocoDataBuilder.run)
         }
     }
@@ -130,8 +133,8 @@ extension LocoDataBuilder {
 
             return Dictionary(grouping: sorted) { item in
                 item.filename + item.pathComponents
-                  .dropLast(2)
-                  .joined() // Drop the language to group them togheter
+                    .dropLast(2)
+                    .joined() // Drop the language to group them togheter
             }.map { (_, value: [LocalizableData]) in
                 LocalizationGroup(files: value)
             }
@@ -149,13 +152,19 @@ extension LocoDataBuilder {
         }
     }
 
-    private func gatherSourceFileData(_ pattern: RegexPattern, allStringsRegex: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
+    private func gatherSourceFileData(_ patterns: [RegexPattern], allStringsRegex: RegexPattern) -> (SourceFile) -> IO<LocalizableData> {
         { sourceFile in
             IO {
-
-                let keyEntries = exctractUsing(regex: pattern, sourceFile: sourceFile)
-                    .map { values in values.map { LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber) } }
-                    .unsafeRun()
+                var keyEntries = [LocalizeEntry]()
+                for pattern in patterns {
+                    let result = exctractUsing(regex: pattern, sourceFile: sourceFile)
+                        .map { values in values.map {
+                                LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+                            }
+                        }
+                        .unsafeRun()
+                    keyEntries += result
+                }
 
                 let restKeys = exctractUsing(regex: allStringsRegex, sourceFile: sourceFile)
                     .map { values in values.map { LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber) } }
@@ -231,12 +240,12 @@ extension LocoDataBuilder {
     func exctractUsing(regex pattern: RegexPattern, sourceFile: SourceFile) -> IO<[SourceValues]> {
         IO {
             guard let regex = try? NSRegularExpression(
-                      pattern: pattern.regex,
-                      options: [
-                          .anchorsMatchLines,
-                          //.allowCommentsAndWhitespace
-                      ]
-                  )
+                pattern: pattern.regex,
+                options: [
+                    .anchorsMatchLines,
+                    .allowCommentsAndWhitespace
+                ]
+            )
             else { return [] }
 
             let data = sourceFile.data
