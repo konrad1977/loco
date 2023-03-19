@@ -23,7 +23,7 @@ extension RegexPattern {
         case .allStrings:
             return #"(\".+\")"#
         case .swiftgen:
-            return #"\.tr\(\"\w+\"\,\W?(\"\S+\")"#
+            return #"^[^\n\/]*\.tr\(\"\w+\"\,\W?(\"\S+\")"#
         }
     }
 }
@@ -31,7 +31,7 @@ extension RegexPattern {
 extension RegexPattern {
     
     static func buildSourceRegex(_ list: [String]) -> String {
-        #"[^\w?]("# + list.joined(separator: "\\(|") + #")\s*?(\".*?\")"#
+        #"^[^\n\/]*("# + list.joined(separator: "\\(|") + #")\s*?(\".*?\")"#
     }
 
     static var sourceRegex: String {

@@ -21,7 +21,9 @@ class RegexTests: XCTestCase {
           Label("Label")
           String(localized:
            "String.Localalized")
-        let name = L10n.tr("Localization", "Part.name", fallback: "This is a fallback")
+           let name = L10n.tr("Localization", "Part.name", fallback: "This is a fallback")
+           // let name = L10n.tr("Localization", "Part.iscommented_out", fallback: "This is a fallback")
+           // String(localized: "Hello world") 
         """
         
         sourcefile = SourceFile(
