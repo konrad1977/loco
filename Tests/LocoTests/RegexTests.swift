@@ -59,6 +59,15 @@ class RegexTests: XCTestCase {
         XCTAssertEqual(result[2].keys[1], "\"Label\"")
         XCTAssertEqual(result[3].keys[1], "\"String.Localalized\"")
     }
+   
+    func testQueryAllStrings() {
+        let result = builder.exctractUsing(
+            regex: .allStrings,
+            sourceFile: sourcefile
+        )
+        .unsafeRun()
+        XCTAssertEqual(result.count, 6)
+    }
     
     func testSwiftGenData() {
         let result = builder.exctractUsing(regex: .swiftgen, sourceFile: sourcefile).unsafeRun()

@@ -21,7 +21,7 @@ extension RegexPattern {
         case .missingSemicolon:
             return #"(^\"(?:.(?!;|\\))*$)"#
         case .allStrings:
-            return #"(\"\.*\")"#
+            return #"^[^\n\/]*(\".*\")"#
         case .swiftgen:
             return #"^[^\n\/]*\.tr\(\"\w+\"\,\W?(\"\S+\")"#
         }
