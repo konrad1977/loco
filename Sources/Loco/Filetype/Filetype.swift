@@ -1,4 +1,3 @@
-import Foundation
 import Funswift
 
 struct FileType: OptionSet {
