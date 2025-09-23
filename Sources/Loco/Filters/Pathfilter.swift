@@ -1,4 +1,3 @@
-import Foundation
 import Funswift
 
 public enum PathFilter {
