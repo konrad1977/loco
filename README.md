@@ -17,6 +17,9 @@ Loco is an extremly fast CLI linter for Localization.strings and swift files.
 - **Works with swiftgen generated localizations**.
 
 ### New features:
+- Remove unused localizations from .strings files with `--remove-unused` flag
+- Dry run mode with `--dry-run` to preview changes without modifying files
+- Help menu with `--help` or `-h` flag
 - Doesnt lint empty strings inside normally checked objects.
 - It doesnt check commented out strings that normally would be checked (Single line comments.)
 
@@ -72,6 +75,14 @@ $ loco
 ```
 
 #### Arguments
+
+Display help menu
+```shell
+$ loco --help
+# or
+$ loco -h
+```
+
 Lint individual swift files (check for missing translations only)
 ```shell
 $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
@@ -80,6 +91,21 @@ $ loco -f "/myProject/Sources/Subfolder/somefile.swift"
 Enable colored output
 ```shell
 $ loco --color
+```
+
+Preview unused localizations (dry run mode)
+```shell
+$ loco --dry-run
+```
+
+Remove unused localizations from .strings files
+```shell
+$ loco --remove-unused
+```
+
+Preview removal without making changes
+```shell
+$ loco --remove-unused --dry-run
 ```
 With color
 !["Example2"](https://github.com/konrad1977/loco/blob/main/images/example2.png)

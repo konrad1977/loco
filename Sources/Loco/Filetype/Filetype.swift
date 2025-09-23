@@ -55,7 +55,7 @@ extension FileType {
 }
 
 extension FileType {
-    public var predicate: Predicate<String> {
+    public var predicate: Funswift.Predicate<String> {
         switch self {
         case .all:
             return anyOf(

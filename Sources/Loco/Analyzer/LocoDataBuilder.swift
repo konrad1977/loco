@@ -167,11 +167,20 @@ extension LocoDataBuilder {
                 }
 
                 let restKeys = exctractUsing(regex: allStringsRegex, sourceFile: sourceFile)
-                    .map { values in values.map { LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber) } }
+                    .map { values in values.map {
+                            LocalizeEntry(path: sourceFile.path, key: $0.keys.last ?? "", lineNumber: $0.lineNumber)
+                        }
+                    }
                     .unsafeRun()
                     .filter { keyEntries.contains($0) == false }
 
-                return LocalizableData(path: sourceFile.path, filename: sourceFile.name, filetype: sourceFile.filetype, data: keyEntries, restData: restKeys)
+                return LocalizableData(
+                    path: sourceFile.path,
+                    filename: sourceFile.name,
+                    filetype: sourceFile.filetype,
+                    data: keyEntries,
+                    restData: restKeys
+                )
             }
         }
     }
@@ -243,7 +252,7 @@ extension LocoDataBuilder {
                 pattern: pattern.regex,
                 options: [
                     .anchorsMatchLines,
-                    .allowCommentsAndWhitespace
+                    //.allowCommentsAndWhitespace
                 ]
             )
             else { return [] }

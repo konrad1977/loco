@@ -21,7 +21,7 @@ extension RegexPattern {
         case .missingSemicolon:
             return #"(^\"(?:.(?!;|\\))*$)"#
         case .allStrings:
-            return #"(\"[^"]*\")"#
+            return #"(\"(?=[^\"]{2,}).*?\")"#
         case .swiftgen:
             return #"^[^\n\/]*\.tr\(\"\w+\"\,\W?(\"\S+\")"#
         }
@@ -38,6 +38,7 @@ extension RegexPattern {
         buildSourceRegex(
           [
             "\\.navigationTitle",
+            "\\.localized",
             "Label",
             "DatePicker",
             "Text",

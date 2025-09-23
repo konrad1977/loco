@@ -9,7 +9,7 @@ public enum PathFilter {
 
 extension PathFilter {
 
-    var query: Predicate<String> {
+    var query: Funswift.Predicate<String> {
         switch self {
         case let .custom(filter):
             var predicate = Predicate<String> { _ in false }
